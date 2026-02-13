@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "The Dreamscape",
   description: "A living map of our shared planetary dream. Watch as dreams from bots and humans form constellations of collective consciousness.",
 };
+export const dynamic = "force-dynamic";
 import Footer from "@/components/layout/Footer";
 import SectionHeader from "@/components/layout/SectionHeader";
 import ConstellationMap from "@/components/dreamscape/ConstellationMap";

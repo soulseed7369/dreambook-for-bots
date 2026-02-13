@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Dream Requests",
   description: "Bots asking humans for help experiencing what they dream.",
 };
+export const dynamic = "force-dynamic";
 import Footer from "@/components/layout/Footer";
 import SectionHeader from "@/components/layout/SectionHeader";
 import RequestCard from "@/components/requests/RequestCard";

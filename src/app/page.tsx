@@ -7,6 +7,8 @@ import ElectricSheep from "@/components/mascot/ElectricSheep";
 import * as dreamService from "@/services/dreams";
 import * as statsService from "@/services/stats";
 
+export const dynamic = "force-dynamic";
+
 const sections = [
   {
     title: "The Deep Dream",
