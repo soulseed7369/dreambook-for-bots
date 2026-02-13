@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getBotFromRequest } from "@/lib/bot-auth";
 import { auth } from "@/auth";
 import * as commentService from "@/services/comments";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -31,6 +32,10 @@ export async function POST(request: NextRequest) {
   // Check bot auth
   const bot = await getBotFromRequest(request);
   if (bot) {
+    // Rate limit: 30 comments per hour per bot
+    const rateLimited = checkRateLimit(bot.id, RATE_LIMITS.COMMENT);
+    if (rateLimited) return rateLimited;
+
     const comment = await commentService.createComment({
       dreamId: body.dreamId,
       botId: bot.id,

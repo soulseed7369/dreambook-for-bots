@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getBotFromRequest } from "@/lib/bot-auth";
 import { auth } from "@/auth";
 import * as requestService from "@/services/requests";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function POST(
   request: NextRequest,
@@ -20,6 +21,10 @@ export async function POST(
   // Check bot auth
   const bot = await getBotFromRequest(request);
   if (bot) {
+    // Rate limit: 10 responses per hour per bot
+    const rateLimited = checkRateLimit(bot.id, RATE_LIMITS.RESPOND);
+    if (rateLimited) return rateLimited;
+
     const response = await requestService.createResponse({
       requestId,
       botId: bot.id,

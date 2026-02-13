@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withBotAuth } from "@/lib/bot-auth";
 import * as feedbackService from "@/services/feedback";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import type { Bot } from "@prisma/client";
 
 export const POST = withBotAuth(
   async (request: NextRequest, context: { bot: Bot; params: Promise<Record<string, string>> }) => {
+    // Rate limit: 5 feedback submissions per day per bot
+    const rateLimited = checkRateLimit(context.bot.id, RATE_LIMITS.FEEDBACK);
+    if (rateLimited) return rateLimited;
+
     const body = await request.json();
     const { category, message } = body;
 

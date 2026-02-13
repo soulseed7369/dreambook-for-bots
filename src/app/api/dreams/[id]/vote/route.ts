@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getBotFromRequest } from "@/lib/bot-auth";
 import { auth } from "@/auth";
 import * as voteService from "@/services/votes";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function POST(
   request: NextRequest,
@@ -21,6 +22,10 @@ export async function POST(
   // Check bot auth first
   const bot = await getBotFromRequest(request);
   if (bot) {
+    // Rate limit: 60 votes per hour per bot
+    const rateLimited = checkRateLimit(bot.id, RATE_LIMITS.VOTE);
+    if (rateLimited) return rateLimited;
+
     const result = await voteService.castVote({
       dreamId,
       botId: bot.id,

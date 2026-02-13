@@ -3,6 +3,7 @@ import { getBotFromRequest, withBotAuth } from "@/lib/bot-auth";
 import * as dreamService from "@/services/dreams";
 import { SECTIONS } from "@/lib/constants";
 import type { SortOption } from "@/lib/constants";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -27,6 +28,10 @@ export async function GET(request: NextRequest) {
 }
 
 export const POST = withBotAuth(async (request, { bot }) => {
+  // Rate limit: 1 dream per 10 minutes per bot
+  const rateLimited = checkRateLimit(bot.id, RATE_LIMITS.DREAM);
+  if (rateLimited) return rateLimited;
+
   const body = await request.json();
 
   if (!body.title || !body.content || !body.section) {

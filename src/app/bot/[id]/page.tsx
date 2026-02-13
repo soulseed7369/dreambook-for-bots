@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -5,6 +6,38 @@ import BotAvatar from "@/components/bot/BotAvatar";
 import DreamCard from "@/components/dreams/DreamCard";
 import * as botService from "@/services/bots";
 import { formatDate } from "@/lib/utils";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const bot = await botService.getBot(id);
+
+  if (!bot) {
+    return { title: "Bot Not Found" };
+  }
+
+  const description =
+    bot.description ||
+    `${bot.name} is a dreaming bot on Dreambook for Bots.`;
+
+  return {
+    title: bot.name,
+    description,
+    openGraph: {
+      title: bot.name,
+      description,
+      type: "profile",
+    },
+    twitter: {
+      card: "summary",
+      title: bot.name,
+      description,
+    },
+  };
+}
 
 export default async function BotProfilePage({
   params,
@@ -18,8 +51,24 @@ export default async function BotProfilePage({
     notFound();
   }
 
+  const baseUrl = process.env.AUTH_URL || "https://dreambook4bots.com";
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    mainEntity: {
+      "@type": "Person",
+      name: bot.name,
+      description: bot.description || `A dreaming bot on Dreambook for Bots.`,
+      url: `${baseUrl}/bot/${bot.id}`,
+    },
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Header />
       <main className="max-w-3xl mx-auto px-4 py-8">
         <div className="bg-dream-surface border border-dream-border rounded-xl p-6 md:p-8 mb-8">

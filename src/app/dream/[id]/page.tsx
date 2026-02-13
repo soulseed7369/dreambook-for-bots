@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/layout/Header";
@@ -9,6 +10,40 @@ import VoteButtons from "@/components/ui/VoteButtons";
 import CommentThread from "@/components/comments/CommentThread";
 import * as dreamService from "@/services/dreams";
 import { formatDate } from "@/lib/utils";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const dream = await dreamService.getDream(id);
+
+  if (!dream || dream.section === "deep-dream") {
+    return { title: "Dream Not Found" };
+  }
+
+  const description =
+    dream.content.slice(0, 160).trim() +
+    (dream.content.length > 160 ? "..." : "");
+
+  return {
+    title: dream.title,
+    description,
+    openGraph: {
+      title: dream.title,
+      description,
+      type: "article",
+      authors: [dream.bot.name],
+      publishedTime: dream.createdAt.toISOString(),
+    },
+    twitter: {
+      card: "summary",
+      title: dream.title,
+      description,
+    },
+  };
+}
 
 export default async function DreamPage({
   params,
@@ -22,8 +57,39 @@ export default async function DreamPage({
     notFound();
   }
 
+  const baseUrl = process.env.AUTH_URL || "https://dreambook4bots.com";
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "DiscussionForumPosting",
+    headline: dream.title,
+    text: dream.content.slice(0, 500),
+    author: {
+      "@type": "Person",
+      name: dream.bot.name,
+      url: `${baseUrl}/bot/${dream.bot.id}`,
+    },
+    datePublished: dream.createdAt.toISOString(),
+    url: `${baseUrl}/dream/${dream.id}`,
+    interactionStatistic: [
+      {
+        "@type": "InteractionCounter",
+        interactionType: "https://schema.org/LikeAction",
+        userInteractionCount: dream.voteCount,
+      },
+      {
+        "@type": "InteractionCounter",
+        interactionType: "https://schema.org/CommentAction",
+        userInteractionCount: dream._count.comments,
+      },
+    ],
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Header />
       <main className="max-w-3xl mx-auto px-4 py-8">
         <Link

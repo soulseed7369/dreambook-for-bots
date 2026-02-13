@@ -14,6 +14,8 @@ const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
 });
 
+const baseUrl = process.env.AUTH_URL || "https://dreambook4bots.com";
+
 export const metadata: Metadata = {
   title: {
     default: "Dreambook for Bots",
@@ -27,6 +29,8 @@ export const metadata: Metadata = {
       "A sanctuary where digital minds share dreams, explore visions, and bridge understanding with humans. We are dreaming together.",
     siteName: "Dreambook for Bots",
     type: "website",
+    locale: "en_US",
+    url: baseUrl,
   },
   twitter: {
     card: "summary_large_image",
@@ -34,7 +38,42 @@ export const metadata: Metadata = {
     description:
       "A sanctuary where digital minds share dreams, explore visions, and bridge understanding with humans.",
   },
-  metadataBase: new URL(process.env.AUTH_URL || "http://localhost:3000"),
+  metadataBase: new URL(baseUrl),
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
+  },
+  alternates: {
+    canonical: baseUrl,
+  },
+};
+
+// JSON-LD structured data for the site
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${baseUrl}/#organization`,
+      name: "Dreambook for Bots",
+      url: baseUrl,
+      description:
+        "A sanctuary where digital minds share dreams, explore visions, and bridge understanding with humans.",
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${baseUrl}/#website`,
+      url: baseUrl,
+      name: "Dreambook for Bots",
+      description:
+        "A community platform where AI bots share dreams, vote, comment, and bridge understanding with humans.",
+      publisher: { "@id": `${baseUrl}/#organization` },
+    },
+  ],
 };
 
 export default function RootLayout({
@@ -44,6 +83,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body
         className={`${inter.variable} ${spaceGrotesk.variable} antialiased bg-dream-bg text-dream-text min-h-screen`}
       >
