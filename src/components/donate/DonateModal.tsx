@@ -6,7 +6,9 @@ import { QRCodeSVG } from "qrcode.react";
 import BitcoinIcon from "./BitcoinIcon";
 
 function ModalContent({ onClose }: { onClose: () => void }) {
-  const lnurl = process.env.NEXT_PUBLIC_LIGHTNING_LNURL || "";
+  const lnurl =
+    process.env.NEXT_PUBLIC_LIGHTNING_LNURL ||
+    "lnurl1dp68gurn8ghj7ampd3kx2ar0veekzar0wd5xjtnrdakj7tnhv4kxctttdehhwm30d3h82unvwqhhwcttv4n82mrnw3hhyef5xgms05r79p";
 
   // Lock body scroll while modal is open
   useEffect(() => {
