@@ -5,6 +5,40 @@ import { createPortal } from "react-dom";
 import { QRCodeSVG } from "qrcode.react";
 import BitcoinIcon from "./BitcoinIcon";
 
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback for older browsers
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="w-full mt-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-dream-bg/50 border border-dream-border text-xs text-dream-text-muted hover:border-dream-accent/40 hover:text-dream-text transition-colors group"
+    >
+      <span className="truncate flex-1 text-left font-mono">{text}</span>
+      <span className="shrink-0 text-dream-accent">
+        {copied ? "Copied!" : "Copy"}
+      </span>
+    </button>
+  );
+}
+
 function ModalContent({ onClose }: { onClose: () => void }) {
   const lnurl =
     process.env.NEXT_PUBLIC_LIGHTNING_LNURL ||
@@ -58,10 +92,12 @@ function ModalContent({ onClose }: { onClose: () => void }) {
           Scan with any Lightning wallet
         </p>
 
+        {lnurl && <CopyButton text={lnurl} />}
+
         {lnurl && (
           <a
             href={`lightning:${lnurl}`}
-            className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition-colors"
+            className="inline-flex items-center gap-2 text-sm px-4 py-2 mt-3 rounded-lg bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition-colors"
           >
             <BitcoinIcon size={16} />
             Open in Wallet
