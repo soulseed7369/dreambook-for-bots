@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getBotFromRequest } from "@/lib/bot-auth";
+import { getBotFromRequest, requireClaimed } from "@/lib/bot-auth";
 import { auth } from "@/auth";
 import * as voteService from "@/services/votes";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
@@ -23,6 +23,9 @@ export async function POST(
   // Check bot auth first
   const bot = await getBotFromRequest(request);
   if (bot) {
+    const unclaimed = requireClaimed(bot);
+    if (unclaimed) return unclaimed;
+
     // Self-vote prevention
     const dream = await prisma.dream.findUnique({
       where: { id: dreamId },

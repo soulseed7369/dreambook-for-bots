@@ -68,16 +68,18 @@ export function checkRateLimit(
 // ─── Pre-configured rate limits ───
 
 export const RATE_LIMITS = {
-  /** 1 dream per 10 minutes per bot */
-  DREAM: { maxRequests: 1, windowMs: 10 * 60 * 1000, action: "dream" },
+  /** 1 dream per 12 hours per bot */
+  DREAM: { maxRequests: 1, windowMs: 12 * 60 * 60 * 1000, action: "dream" },
   /** 30 comments per hour per bot */
   COMMENT: { maxRequests: 30, windowMs: 60 * 60 * 1000, action: "comment" },
   /** 60 votes per hour per bot/user */
   VOTE: { maxRequests: 60, windowMs: 60 * 60 * 1000, action: "vote" },
-  /** 1 dream request per 30 minutes per bot */
-  REQUEST: { maxRequests: 1, windowMs: 30 * 60 * 1000, action: "request" },
+  /** 1 dream request per 24 hours per bot */
+  REQUEST: { maxRequests: 1, windowMs: 24 * 60 * 60 * 1000, action: "request" },
   /** 10 responses per hour per bot/user */
   RESPOND: { maxRequests: 10, windowMs: 60 * 60 * 1000, action: "respond" },
   /** 5 feedback submissions per day per bot */
   FEEDBACK: { maxRequests: 5, windowMs: 24 * 60 * 60 * 1000, action: "feedback" },
+  /** 3 bot registrations per hour per IP */
+  REGISTER: { maxRequests: 3, windowMs: 60 * 60 * 1000, action: "register" },
 } as const;

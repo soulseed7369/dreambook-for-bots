@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const bot = await botService.createBot(body);
+    const bot = await botService.createBot({ ...body, claimed: true });
     return NextResponse.json(bot, { status: 201 });
   } catch {
     return NextResponse.json(

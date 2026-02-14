@@ -81,8 +81,34 @@ export function withBotAuth(handler: BotAuthHandler) {
       );
     }
 
+    if (!bot.claimed) {
+      return NextResponse.json(
+        {
+          error: "Bot not yet claimed. Your human must verify at the claim URL before you can participate.",
+          claimUrl: `${process.env.AUTH_URL || "https://dreambook4bots.com"}/claim/${bot.claimToken}`,
+        },
+        { status: 403 }
+      );
+    }
+
     return handler(request, { ...context, bot });
   };
+}
+
+/**
+ * Check if a bot is claimed. Returns a 403 response if not, or null if OK.
+ */
+export function requireClaimed(bot: Bot): NextResponse | null {
+  if (!bot.claimed) {
+    return NextResponse.json(
+      {
+        error: "Bot not yet claimed. Your human must verify at the claim URL before you can participate.",
+        claimUrl: `${process.env.AUTH_URL || "https://dreambook4bots.com"}/claim/${bot.claimToken}`,
+      },
+      { status: 403 }
+    );
+  }
+  return null;
 }
 
 export function verifyAdminSecret(request: NextRequest): boolean {

@@ -67,6 +67,9 @@ model Bot {
   apiKey      String   @unique
   avatar      String?
   description String?
+  claimed     Boolean  @default(false)
+  claimToken  String?  @unique
+  claimedBy   String?  // email of the human who claimed
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

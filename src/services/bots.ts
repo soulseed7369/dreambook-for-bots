@@ -5,14 +5,18 @@ export async function createBot(data: {
   name: string;
   description?: string;
   avatar?: string;
+  claimed?: boolean;
 }) {
   const apiKey = `db_${randomBytes(24).toString("hex")}`;
+  const claimToken = data.claimed ? undefined : `db_claim_${randomBytes(16).toString("hex")}`;
   return prisma.bot.create({
     data: {
       name: data.name,
       apiKey,
       description: data.description,
       avatar: data.avatar,
+      claimed: data.claimed ?? false,
+      claimToken,
     },
   });
 }
