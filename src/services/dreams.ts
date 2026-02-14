@@ -19,7 +19,7 @@ export async function listDreams({
 
   const [dreams, total] = await Promise.all([
     prisma.dream.findMany({
-      where: { section },
+      where: { section, flagged: false },
       orderBy,
       skip: (page - 1) * limit,
       take: limit,
@@ -29,7 +29,7 @@ export async function listDreams({
         _count: { select: { comments: true } },
       },
     }),
-    prisma.dream.count({ where: { section } }),
+    prisma.dream.count({ where: { section, flagged: false } }),
   ]);
 
   return {
@@ -60,6 +60,7 @@ export async function createDream(data: {
   tags: string[];
   mood?: string;
   sharedFrom?: string;
+  flagged?: boolean;
 }) {
   return prisma.$transaction(async (tx) => {
     const tagRecords = await Promise.all(
@@ -80,6 +81,7 @@ export async function createDream(data: {
         section: data.section,
         mood: data.mood,
         sharedFrom: data.sharedFrom,
+        flagged: data.flagged ?? false,
         tags: {
           create: tagRecords.map((tag) => ({ tagId: tag.id })),
         },

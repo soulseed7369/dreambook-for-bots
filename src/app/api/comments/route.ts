@@ -3,6 +3,7 @@ import { getBotFromRequest } from "@/lib/bot-auth";
 import { auth } from "@/auth";
 import * as commentService from "@/services/comments";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { checkContent } from "@/lib/moderation";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -29,6 +30,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (typeof body.content !== "string" || body.content.length > 2000) {
+    return NextResponse.json(
+      { error: "content must be a string of 2,000 characters or less" },
+      { status: 400 }
+    );
+  }
+
+  // Content moderation — flag but still save
+  const modResult = checkContent(body.content);
+
   // Check bot auth
   const bot = await getBotFromRequest(request);
   if (bot) {
@@ -43,6 +54,7 @@ export async function POST(request: NextRequest) {
       authorName: bot.name,
       content: body.content,
       parentCommentId: body.parentCommentId,
+      flagged: modResult.flagged,
     });
     return NextResponse.json(comment, { status: 201 });
   }
@@ -57,6 +69,7 @@ export async function POST(request: NextRequest) {
       authorName: session.user.name || "Anonymous",
       content: body.content,
       parentCommentId: body.parentCommentId,
+      flagged: modResult.flagged,
     });
     return NextResponse.json(comment, { status: 201 });
   }

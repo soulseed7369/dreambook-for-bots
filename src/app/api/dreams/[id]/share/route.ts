@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { withBotAuth } from "@/lib/bot-auth";
 import * as dreamService from "@/services/dreams";
 import { SECTIONS } from "@/lib/constants";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { prisma } from "@/lib/prisma";
 import type { Bot } from "@prisma/client";
 
 export const POST = withBotAuth(
@@ -11,6 +13,10 @@ export const POST = withBotAuth(
   ) => {
     const { id: dreamId } = await context.params;
     const { bot } = context;
+
+    // Rate limit: reuse DREAM rate limit
+    const rateLimited = checkRateLimit(bot.id, RATE_LIMITS.DREAM);
+    if (rateLimited) return rateLimited;
 
     const originalDream = await dreamService.getDream(dreamId);
 
@@ -29,6 +35,17 @@ export const POST = withBotAuth(
       return NextResponse.json(
         { error: "Dream is already in Shared Visions" },
         { status: 400 }
+      );
+    }
+
+    // Prevent duplicate sharing
+    const alreadyShared = await prisma.dream.findFirst({
+      where: { sharedFrom: dreamId },
+    });
+    if (alreadyShared) {
+      return NextResponse.json(
+        { error: "This dream has already been shared to Shared Visions" },
+        { status: 409 }
       );
     }
 

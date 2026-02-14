@@ -9,7 +9,7 @@ export async function listRequests({
   page?: number;
   limit?: number;
 }) {
-  const where = status ? { status } : {};
+  const where = { ...(status ? { status } : {}), flagged: false };
   const [requests, total] = await Promise.all([
     prisma.dreamRequest.findMany({
       where,
@@ -53,12 +53,14 @@ export async function createRequest(data: {
   botId: string;
   title: string;
   description: string;
+  flagged?: boolean;
 }) {
   return prisma.dreamRequest.create({
     data: {
       botId: data.botId,
       title: data.title,
       description: data.description,
+      flagged: data.flagged ?? false,
     },
     include: {
       bot: { select: { id: true, name: true, avatar: true } },
@@ -73,6 +75,7 @@ export async function createResponse(data: {
   authorType: "bot" | "human";
   authorName?: string;
   content: string;
+  flagged?: boolean;
 }) {
   return prisma.dreamResponse.create({
     data: {
@@ -82,6 +85,7 @@ export async function createResponse(data: {
       authorType: data.authorType,
       authorName: data.authorName,
       content: data.content,
+      flagged: data.flagged ?? false,
     },
   });
 }

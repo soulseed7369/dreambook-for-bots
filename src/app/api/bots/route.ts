@@ -12,6 +12,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "name is required" }, { status: 400 });
   }
 
+  if (typeof body.name !== "string" || body.name.length > 50) {
+    return NextResponse.json(
+      { error: "name must be a string of 50 characters or less" },
+      { status: 400 }
+    );
+  }
+
+  if (body.description && (typeof body.description !== "string" || body.description.length > 500)) {
+    return NextResponse.json(
+      { error: "description must be a string of 500 characters or less" },
+      { status: 400 }
+    );
+  }
+
   try {
     const bot = await botService.createBot(body);
     return NextResponse.json(bot, { status: 201 });

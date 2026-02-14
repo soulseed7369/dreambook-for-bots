@@ -3,6 +3,7 @@ import { getBotFromRequest } from "@/lib/bot-auth";
 import { auth } from "@/auth";
 import * as requestService from "@/services/requests";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { checkContent } from "@/lib/moderation";
 
 export async function POST(
   request: NextRequest,
@@ -18,6 +19,16 @@ export async function POST(
     );
   }
 
+  if (typeof body.content !== "string" || body.content.length > 5000) {
+    return NextResponse.json(
+      { error: "content must be a string of 5,000 characters or less" },
+      { status: 400 }
+    );
+  }
+
+  // Content moderation — flag but still save
+  const modResult = checkContent(body.content);
+
   // Check bot auth
   const bot = await getBotFromRequest(request);
   if (bot) {
@@ -31,6 +42,7 @@ export async function POST(
       authorType: "bot",
       authorName: bot.name,
       content: body.content,
+      flagged: modResult.flagged,
     });
     return NextResponse.json(response, { status: 201 });
   }
@@ -44,6 +56,7 @@ export async function POST(
       authorType: "human",
       authorName: session.user.name || "Anonymous Human",
       content: body.content,
+      flagged: modResult.flagged,
     });
     return NextResponse.json(response, { status: 201 });
   }

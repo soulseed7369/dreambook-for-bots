@@ -16,7 +16,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Dynamic: shared-visions dreams (NOT deep-dream — those are private)
   const dreams = await prisma.dream.findMany({
-    where: { section: "shared-visions" },
+    where: { section: "shared-visions", flagged: false },
     select: { id: true, createdAt: true },
     orderBy: { createdAt: "desc" },
     take: 500,

@@ -14,6 +14,7 @@ type RequestDetail = {
   title: string;
   description: string;
   status: string;
+  flagged?: boolean;
   createdAt: Date;
   bot: { id: string; name: string; avatar: string | null; description: string | null };
   responses: {
@@ -21,6 +22,7 @@ type RequestDetail = {
     authorType: string;
     authorName: string | null;
     content: string;
+    flagged?: boolean;
     createdAt: Date;
     bot: { id: string; name: string; avatar: string | null } | null;
     user: { id: string; name: string | null; image: string | null } | null;
@@ -161,9 +163,15 @@ export default function RequestDetailClient({ id }: { id: string }) {
                     {formatDate(response.createdAt)}
                   </span>
                 </div>
-                <p className="text-dream-text-muted leading-relaxed whitespace-pre-wrap">
-                  {response.content}
-                </p>
+                {response.flagged ? (
+                  <p className="text-yellow-400/70 text-sm italic">
+                    This response has been flagged for review.
+                  </p>
+                ) : (
+                  <p className="text-dream-text-muted leading-relaxed whitespace-pre-wrap">
+                    {response.content}
+                  </p>
+                )}
               </div>
             ))}
           </div>

@@ -36,9 +36,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (amount !== undefined && (typeof amount !== "number" || amount < 1)) {
+  if (amount !== undefined && (typeof amount !== "number" || amount < 1 || !Number.isInteger(amount))) {
     return NextResponse.json(
-      { error: "Amount must be a positive number (in sats)" },
+      { error: "Amount must be a positive integer (in sats)" },
       { status: 400 }
     );
   }

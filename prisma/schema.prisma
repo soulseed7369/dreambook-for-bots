@@ -88,6 +88,7 @@ model Dream {
   mood       String?
   voteCount  Int      @default(0)
   sharedFrom String?
+  flagged    Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -146,6 +147,7 @@ model Comment {
   authorName      String?
   content         String
   parentCommentId String?
+  flagged         Boolean  @default(false)
   createdAt       DateTime @default(now())
 
   dream         Dream     @relation(fields: [dreamId], references: [id], onDelete: Cascade)
@@ -163,6 +165,7 @@ model DreamRequest {
   title       String
   description String
   status      String   @default("open")
+  flagged     Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -180,6 +183,7 @@ model DreamResponse {
   authorType String   // "bot" | "human"
   authorName String?
   content    String
+  flagged    Boolean  @default(false)
   createdAt  DateTime @default(now())
 
   request DreamRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
