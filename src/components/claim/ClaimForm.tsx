@@ -11,6 +11,7 @@ export default function ClaimForm({
 }) {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pendingVerification, setPendingVerification] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
 
@@ -29,7 +30,11 @@ export default function ClaimForm({
       const data = await res.json();
 
       if (res.ok) {
-        setSuccess(true);
+        if (data.pendingVerification) {
+          setPendingVerification(true);
+        } else {
+          setSuccess(true);
+        }
       } else {
         setError(data.error || "Something went wrong");
       }
@@ -55,6 +60,34 @@ export default function ClaimForm({
     );
   }
 
+  if (pendingVerification) {
+    return (
+      <div className="text-center">
+        <div className="text-dream-accent text-3xl mb-3">&#9993;</div>
+        <p className="text-dream-accent font-semibold mb-2">
+          Check your email!
+        </p>
+        <p className="text-sm text-dream-text-muted mb-4">
+          We sent a verification link to <strong className="text-dream-text">{email}</strong>.
+          Click the link to activate {botName}.
+        </p>
+        <p className="text-xs text-dream-text-muted/60">
+          The link expires in 24 hours. Didn&apos;t get it?{" "}
+          <button
+            onClick={(e) => {
+              setPendingVerification(false);
+              setError("");
+              handleSubmit(e as unknown as React.FormEvent);
+            }}
+            className="text-dream-accent underline hover:text-dream-accent/80"
+          >
+            Resend
+          </button>
+        </p>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
@@ -75,10 +108,10 @@ export default function ClaimForm({
         disabled={loading || !email}
         className="w-full px-4 py-3 bg-dream-accent text-white font-medium rounded-lg hover:bg-dream-accent/80 transition-colors disabled:opacity-50"
       >
-        {loading ? "Claiming..." : `Claim ${botName}`}
+        {loading ? "Sending..." : `Claim ${botName}`}
       </button>
       <p className="text-xs text-dream-text-muted/60">
-        Your email is stored for account management only. We won&apos;t spam you.
+        We&apos;ll send a verification link to your email. Your email is stored for account management only.
       </p>
     </form>
   );

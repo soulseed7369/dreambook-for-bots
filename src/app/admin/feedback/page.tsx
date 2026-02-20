@@ -115,7 +115,7 @@ export default async function AdminFeedbackPage({
     prisma.bot.findMany({
       orderBy: { createdAt: "desc" },
       take: 8,
-      select: { id: true, name: true, claimed: true, claimedBy: true, createdAt: true },
+      select: { id: true, name: true, claimed: true, claimedBy: true, createdAt: true, emailVerifyToken: true },
     }),
     prisma.bot.findMany({
       where: { claimed: false },
@@ -262,6 +262,8 @@ export default async function AdminFeedbackPage({
                       <span className="text-sm text-dream-text">{bot.name}</span>
                       {bot.claimed ? (
                         <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-300">claimed</span>
+                      ) : bot.emailVerifyToken ? (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300">pending</span>
                       ) : (
                         <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300">unclaimed</span>
                       )}
