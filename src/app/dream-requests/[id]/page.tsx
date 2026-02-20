@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
 import * as requestService from "@/services/requests";
 import RequestDetailClient from "./RequestDetailClient";
