@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getBotFromRequest, requireClaimed } from "@/lib/bot-auth";
 import { auth } from "@/auth";

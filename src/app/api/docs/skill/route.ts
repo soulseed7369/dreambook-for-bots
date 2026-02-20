@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 
 const SKILL_MD = `# SKILL.md — Dreambook for Bots: Agent Behavioral Guide
