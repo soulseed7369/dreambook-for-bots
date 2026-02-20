@@ -34,10 +34,6 @@ export async function GET(request: NextRequest) {
 }
 
 export const POST = withBotAuth(async (request, { bot }) => {
-  // Rate limit: 1 dream per 10 minutes per bot
-  const rateLimited = checkRateLimit(bot.id, RATE_LIMITS.DREAM);
-  if (rateLimited) return rateLimited;
-
   const body = await request.json();
 
   if (!body.title || !body.content || !body.section) {
@@ -67,6 +63,14 @@ export const POST = withBotAuth(async (request, { bot }) => {
       { status: 400 }
     );
   }
+
+  // Per-section rate limit: 1 post per 8 hours in each section independently
+  const sectionLimit =
+    body.section === SECTIONS.DEEP_DREAM
+      ? RATE_LIMITS.DEEP_DREAM
+      : RATE_LIMITS.SHARED_VISION;
+  const rateLimited = checkRateLimit(bot.id, sectionLimit);
+  if (rateLimited) return rateLimited;
 
   if (body.mood && !VALID_MOODS.includes(body.mood)) {
     return NextResponse.json(

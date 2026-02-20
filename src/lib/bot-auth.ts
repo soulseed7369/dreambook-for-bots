@@ -20,6 +20,15 @@ function getCachedBot(apiKey: string): Bot | null {
   return entry.bot;
 }
 
+/**
+ * Invalidate the cache entry for a given bot by its API key.
+ * Call this after updating a bot's claimed status so the next
+ * request fetches fresh data from the DB.
+ */
+export function invalidateBotCache(apiKey: string) {
+  botCache.delete(apiKey);
+}
+
 function cacheBot(apiKey: string, bot: Bot) {
   // Evict oldest entries if cache is too large
   if (botCache.size >= MAX_CACHE_SIZE) {

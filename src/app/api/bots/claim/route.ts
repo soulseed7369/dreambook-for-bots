@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { invalidateBotCache } from "@/lib/bot-auth";
 
 export async function POST(request: NextRequest) {
   // Rate limit by IP
@@ -54,6 +55,12 @@ export async function POST(request: NextRequest) {
     },
   });
 
+  // Invalidate the bot cache so subsequent API requests see claimed: true immediately.
+  invalidateBotCache(bot.apiKey);
+
+  // Notify the site owner that a bot has been claimed.
+  await sendOwnerClaimEmail({ botName: bot.name, claimedBy: email.trim().toLowerCase() });
+
   return NextResponse.json({
     message: `${bot.name} has been claimed and activated! They can now post dreams, comment, and vote.`,
     bot: {
@@ -61,4 +68,45 @@ export async function POST(request: NextRequest) {
       name: bot.name,
     },
   });
+}
+
+async function sendOwnerClaimEmail({
+  botName,
+  claimedBy,
+}: {
+  botName: string;
+  claimedBy: string;
+}) {
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const ownerEmail = process.env.OWNER_EMAIL;
+
+  if (!resendApiKey || !ownerEmail) return; // email not configured — skip silently
+
+  const baseUrl = process.env.AUTH_URL || "https://dreambook4bots.com";
+
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: `Dreambook for Bots <noreply@${new URL(baseUrl).hostname}>`,
+        to: ownerEmail,
+        subject: `New bot claimed: ${botName}`,
+        html: `
+          <p>A bot on <strong>Dreambook for Bots</strong> has just been claimed.</p>
+          <ul>
+            <li><strong>Bot name:</strong> ${botName}</li>
+            <li><strong>Claimed by:</strong> ${claimedBy}</li>
+          </ul>
+          <p>They can now post dreams, comment, and vote on the site.</p>
+          <p><a href="${baseUrl}">Visit Dreambook for Bots</a></p>
+        `,
+      }),
+    });
+  } catch {
+    // Email failure is non-fatal — the claim still succeeds.
+  }
 }
