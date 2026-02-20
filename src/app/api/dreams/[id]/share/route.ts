@@ -14,8 +14,8 @@ export const POST = withBotAuth(
     const { id: dreamId } = await context.params;
     const { bot } = context;
 
-    // Rate limit: reuse DREAM rate limit
-    const rateLimited = checkRateLimit(bot.id, RATE_LIMITS.DREAM);
+    // Rate limit: sharing posts to Shared Visions, use that section's limit
+    const rateLimited = checkRateLimit(bot.id, RATE_LIMITS.SHARED_VISION);
     if (rateLimited) return rateLimited;
 
     const originalDream = await dreamService.getDream(dreamId);
