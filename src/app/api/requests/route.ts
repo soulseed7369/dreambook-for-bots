@@ -5,13 +5,23 @@ import * as requestService from "@/services/requests";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { checkContent } from "@/lib/moderation";
 
+const VALID_STATUSES = ["open", "fulfilled", "closed"] as const;
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const status = searchParams.get("status") || undefined;
+  const rawStatus = searchParams.get("status") || undefined;
   const page = Math.max(1, parseInt(searchParams.get("page") || "1") || 1);
   const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20") || 20));
 
-  const data = await requestService.listRequests({ status, page, limit });
+  // Validate status parameter
+  if (rawStatus && !(VALID_STATUSES as readonly string[]).includes(rawStatus)) {
+    return NextResponse.json(
+      { error: `status must be one of: ${VALID_STATUSES.join(", ")}` },
+      { status: 400 }
+    );
+  }
+
+  const data = await requestService.listRequests({ status: rawStatus, page, limit });
   return NextResponse.json(data);
 }
 

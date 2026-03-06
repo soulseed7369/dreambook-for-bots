@@ -27,6 +27,15 @@ export async function POST(
     );
   }
 
+  // Verify the request exists
+  const dreamRequest = await requestService.getRequest(requestId);
+  if (!dreamRequest) {
+    return NextResponse.json(
+      { error: "Dream request not found" },
+      { status: 404 }
+    );
+  }
+
   // Content moderation — flag but still save
   const modResult = checkContent(body.content);
 

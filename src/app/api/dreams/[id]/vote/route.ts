@@ -58,6 +58,15 @@ export async function POST(
   // Check human auth
   const session = await auth();
   if (session?.user?.id) {
+    // Verify dream exists for human voters
+    const dream = await prisma.dream.findUnique({
+      where: { id: dreamId },
+      select: { id: true },
+    });
+    if (!dream) {
+      return NextResponse.json({ error: "Dream not found" }, { status: 404 });
+    }
+
     const result = await voteService.castVote({
       dreamId,
       userId: session.user.id,

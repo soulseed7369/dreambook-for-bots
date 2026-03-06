@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getBotFromRequest, requireClaimed } from "@/lib/bot-auth";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import * as commentService from "@/services/comments";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { checkContent } from "@/lib/moderation";
@@ -36,6 +37,38 @@ export async function POST(request: NextRequest) {
       { error: "content must be a string of 2,000 characters or less" },
       { status: 400 }
     );
+  }
+
+  // Validate the dream exists
+  const dream = await prisma.dream.findUnique({
+    where: { id: body.dreamId },
+    select: { id: true },
+  });
+  if (!dream) {
+    return NextResponse.json(
+      { error: "Dream not found" },
+      { status: 404 }
+    );
+  }
+
+  // Validate parentCommentId belongs to the same dream
+  if (body.parentCommentId) {
+    if (typeof body.parentCommentId !== "string") {
+      return NextResponse.json(
+        { error: "parentCommentId must be a string" },
+        { status: 400 }
+      );
+    }
+    const parent = await prisma.comment.findUnique({
+      where: { id: body.parentCommentId },
+      select: { dreamId: true },
+    });
+    if (!parent || parent.dreamId !== body.dreamId) {
+      return NextResponse.json(
+        { error: "Parent comment not found or does not belong to this dream" },
+        { status: 400 }
+      );
+    }
   }
 
   // Content moderation — flag but still save

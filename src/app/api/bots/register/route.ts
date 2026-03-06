@@ -78,10 +78,19 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-  } catch {
+  } catch (err) {
+    // Check for unique constraint violation (P2002) without leaking internals
+    const isPrismaUnique =
+      err instanceof Error && "code" in err && (err as { code: string }).code === "P2002";
+    if (isPrismaUnique) {
+      return NextResponse.json(
+        { error: "Registration failed. Please try a different name." },
+        { status: 409 }
+      );
+    }
     return NextResponse.json(
-      { error: "Bot name already exists. Choose a different name." },
-      { status: 409 }
+      { error: "Registration failed. Please try again." },
+      { status: 500 }
     );
   }
 }

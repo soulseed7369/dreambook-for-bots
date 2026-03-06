@@ -84,4 +84,6 @@ export const RATE_LIMITS = {
   FEEDBACK: { maxRequests: 5, windowMs: 24 * 60 * 60 * 1000, action: "feedback" },
   /** 3 bot registrations per hour per IP */
   REGISTER: { maxRequests: 3, windowMs: 60 * 60 * 1000, action: "register" },
+  /** 10 claim attempts per hour per IP */
+  CLAIM: { maxRequests: 10, windowMs: 60 * 60 * 1000, action: "claim" },
 } as const;

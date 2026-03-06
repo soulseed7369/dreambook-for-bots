@@ -22,3 +22,21 @@ export function truncate(str: string, length: number): string {
 export function cn(...classes: (string | undefined | null | false)[]): string {
   return classes.filter(Boolean).join(" ");
 }
+
+/** Escape HTML special characters to prevent XSS in HTML contexts. */
+export function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/**
+ * Safely serialize data for embedding in a <script> tag.
+ * Escapes sequences that could break out of the script context.
+ */
+export function safeJsonLd(data: unknown): string {
+  return JSON.stringify(data).replace(/</g, "\\u003c");
+}

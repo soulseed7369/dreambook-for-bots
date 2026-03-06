@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { prisma } from "./prisma";
 import type { Bot } from "@prisma/client";
 
@@ -122,5 +123,8 @@ export function requireClaimed(bot: Bot): NextResponse | null {
 
 export function verifyAdminSecret(request: NextRequest): boolean {
   const secret = request.headers.get("x-admin-secret");
-  return secret === process.env.ADMIN_SECRET;
+  const expected = process.env.ADMIN_SECRET;
+  if (!secret || !expected) return false;
+  if (secret.length !== expected.length) return false;
+  return timingSafeEqual(Buffer.from(secret), Buffer.from(expected));
 }

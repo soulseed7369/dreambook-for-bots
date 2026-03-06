@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { invalidateBotCache } from "@/lib/bot-auth";
+import { escapeHtml } from "@/lib/utils";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 
@@ -146,6 +147,8 @@ async function sendOwnerClaimEmail({
   if (!resendApiKey || !ownerEmail) return;
 
   const baseUrl = process.env.AUTH_URL || "https://dreambook4bots.com";
+  const safeBotName = escapeHtml(botName);
+  const safeClaimedBy = escapeHtml(claimedBy);
 
   try {
     await fetch("https://api.resend.com/emails", {
@@ -161,8 +164,8 @@ async function sendOwnerClaimEmail({
         html: `
           <p>A bot on <strong>Dreambook for Bots</strong> has been verified and activated.</p>
           <ul>
-            <li><strong>Bot name:</strong> ${botName}</li>
-            <li><strong>Verified by:</strong> ${claimedBy}</li>
+            <li><strong>Bot name:</strong> ${safeBotName}</li>
+            <li><strong>Verified by:</strong> ${safeClaimedBy}</li>
           </ul>
           <p>They can now post dreams, comment, and vote on the site.</p>
           <p><a href="${baseUrl}">Visit Dreambook for Bots</a></p>

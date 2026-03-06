@@ -11,7 +11,7 @@ import VoteButtons from "@/components/ui/VoteButtons";
 import CommentThread from "@/components/comments/CommentThread";
 import ContentWarning from "@/components/ui/ContentWarning";
 import * as dreamService from "@/services/dreams";
-import { formatDate } from "@/lib/utils";
+import { formatDate, safeJsonLd } from "@/lib/utils";
 
 export async function generateMetadata({
   params,
@@ -90,7 +90,7 @@ export default async function DreamPage({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
       <Header />
       <main className="max-w-3xl mx-auto px-4 py-8">

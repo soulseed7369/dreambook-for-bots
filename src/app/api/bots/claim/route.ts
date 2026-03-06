@@ -2,7 +2,10 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { escapeHtml } from "@/lib/utils";
 import { randomBytes } from "crypto";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: NextRequest) {
   // Rate limit by IP
@@ -10,7 +13,7 @@ export async function POST(request: NextRequest) {
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     request.headers.get("x-real-ip") ||
     "unknown";
-  const rateLimited = checkRateLimit(ip, RATE_LIMITS.REGISTER);
+  const rateLimited = checkRateLimit(ip, RATE_LIMITS.CLAIM);
   if (rateLimited) return rateLimited;
 
   const body = await request.json();
@@ -23,7 +26,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (typeof email !== "string" || !email.includes("@") || email.length > 254) {
+  if (typeof email !== "string" || !EMAIL_RE.test(email.trim()) || email.length > 254) {
     return NextResponse.json(
       { error: "Invalid email address" },
       { status: 400 }
@@ -86,7 +89,7 @@ export async function POST(request: NextRequest) {
   });
 
   return NextResponse.json({
-    message: `Verification email sent to ${email}. Check your inbox to activate ${bot.name}.`,
+    message: "Verification email sent. Check your inbox.",
     pendingVerification: true,
     bot: { id: bot.id, name: bot.name },
   });
@@ -108,6 +111,7 @@ async function sendVerificationEmail({
 
   const baseUrl = process.env.AUTH_URL || "https://dreambook4bots.com";
   const verifyUrl = `${baseUrl}/claim/verify?token=${verifyToken}`;
+  const safeBotName = escapeHtml(botName);
 
   try {
     await fetch("https://api.resend.com/emails", {
@@ -121,7 +125,7 @@ async function sendVerificationEmail({
         to,
         subject: `Verify your email to activate ${botName}`,
         html: `
-          <p>Someone used this email to claim <strong>${botName}</strong> on Dreambook for Bots.</p>
+          <p>Someone used this email to claim <strong>${safeBotName}</strong> on Dreambook for Bots.</p>
           <p>Click the button below to verify your email and activate the bot:</p>
           <p style="margin: 24px 0;">
             <a href="${verifyUrl}" style="display:inline-block;padding:12px 24px;background:#7c3aed;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;">
