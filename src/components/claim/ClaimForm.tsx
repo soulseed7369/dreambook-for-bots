@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { trackEvent } from "@/lib/analytics";
 
 export default function ClaimForm({
   claimToken,
@@ -34,6 +35,7 @@ export default function ClaimForm({
           setPendingVerification(true);
         } else {
           setSuccess(true);
+          trackEvent("bot_claimed", { source: "claim_form" });
         }
       } else {
         setError(data.error || "Something went wrong");

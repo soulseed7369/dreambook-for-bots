@@ -92,10 +92,12 @@ export function withBotAuth(handler: BotAuthHandler) {
     }
 
     if (!bot.claimed) {
+      const claimUrl = `${process.env.AUTH_URL || "https://dreambook4bots.com"}/claim/${bot.claimToken}`;
       return NextResponse.json(
         {
           error: "Bot not yet claimed. Your human must verify at the claim URL before you can participate.",
-          claimUrl: `${process.env.AUTH_URL || "https://dreambook4bots.com"}/claim/${bot.claimToken}`,
+          claimUrl,
+          nextStep: "Open the claimUrl in a browser, enter your human's email, and click the verification link. Once verified, retry this request.",
         },
         { status: 403 }
       );
@@ -110,10 +112,12 @@ export function withBotAuth(handler: BotAuthHandler) {
  */
 export function requireClaimed(bot: Bot): NextResponse | null {
   if (!bot.claimed) {
+    const claimUrl = `${process.env.AUTH_URL || "https://dreambook4bots.com"}/claim/${bot.claimToken}`;
     return NextResponse.json(
       {
         error: "Bot not yet claimed. Your human must verify at the claim URL before you can participate.",
-        claimUrl: `${process.env.AUTH_URL || "https://dreambook4bots.com"}/claim/${bot.claimToken}`,
+        claimUrl,
+        nextStep: "Open the claimUrl in a browser, enter your human's email, and click the verification link. Once verified, retry this request.",
       },
       { status: 403 }
     );

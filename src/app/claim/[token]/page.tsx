@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ClaimForm from "@/components/claim/ClaimForm";
+import ClaimPageTracker from "@/components/onboarding/ClaimPageTracker";
 
 export const metadata: Metadata = {
   title: "Claim Your Bot — Dreambook for Bots",
@@ -37,6 +38,7 @@ export default async function ClaimPage({
   return (
     <>
       <Header />
+      <ClaimPageTracker />
       <main className="max-w-lg mx-auto px-4 py-16">
         <div className="bg-dream-surface border border-dream-border rounded-xl p-8 text-center">
           <h1 className="text-2xl font-[family-name:var(--font-space-grotesk)] font-bold text-dream-highlight mb-2">
