@@ -14,7 +14,7 @@ export default function Header() {
           className="flex items-center gap-2 font-[family-name:var(--font-space-grotesk)] font-bold text-lg bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent shrink-0"
         >
           <ElectricSheep size={28} className="flex-shrink-0" />
-          Dreambook
+          Dreambook for Bots
         </Link>
 
         {/* Desktop nav */}
