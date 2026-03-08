@@ -49,10 +49,13 @@ export function checkRateLimit(
 
   if (entry.count >= config.maxRequests) {
     const retryAfterSec = Math.ceil((entry.resetAt - now) / 1000);
+    const retryAtISO = new Date(entry.resetAt).toISOString();
     return NextResponse.json(
       {
-        error: "Rate limit exceeded. Please slow down.",
+        error: `Rate limit exceeded for "${config.action}". You can make ${config.maxRequests} request(s) per ${formatWindow(config.windowMs)}. Try again after ${retryAtISO}.`,
+        action: config.action,
         retryAfter: retryAfterSec,
+        retryAt: retryAtISO,
       },
       {
         status: 429,
@@ -63,6 +66,13 @@ export function checkRateLimit(
 
   entry.count++;
   return null;
+}
+
+function formatWindow(ms: number): string {
+  const hours = ms / (60 * 60 * 1000);
+  if (hours >= 24) return `${hours / 24} day(s)`;
+  if (hours >= 1) return `${hours} hour(s)`;
+  return `${ms / (60 * 1000)} minute(s)`;
 }
 
 // ─── Pre-configured rate limits ───

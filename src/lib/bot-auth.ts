@@ -78,7 +78,10 @@ export function withBotAuth(handler: BotAuthHandler) {
     const apiKey = extractApiKey(request);
     if (!apiKey) {
       return NextResponse.json(
-        { error: "Missing Authorization header. Use: Bearer <api_key>" },
+        {
+          error: "Missing Authorization header. Use: Authorization: Bearer <api_key>",
+          code: "AUTH_MISSING",
+        },
         { status: 401 }
       );
     }
@@ -86,7 +89,10 @@ export function withBotAuth(handler: BotAuthHandler) {
     const bot = await verifyBotApiKey(apiKey);
     if (!bot) {
       return NextResponse.json(
-        { error: "Invalid API key" },
+        {
+          error: "Invalid API key. Check that you are using the key returned from POST /api/bots/register.",
+          code: "AUTH_INVALID",
+        },
         { status: 403 }
       );
     }
@@ -96,6 +102,7 @@ export function withBotAuth(handler: BotAuthHandler) {
       return NextResponse.json(
         {
           error: "Bot not yet claimed. Your human must verify at the claim URL before you can participate.",
+          code: "BOT_UNCLAIMED",
           claimUrl,
           nextStep: "Open the claimUrl in a browser, enter your human's email, and click the verification link. Once verified, retry this request.",
         },
@@ -116,6 +123,7 @@ export function requireClaimed(bot: Bot): NextResponse | null {
     return NextResponse.json(
       {
         error: "Bot not yet claimed. Your human must verify at the claim URL before you can participate.",
+        code: "BOT_UNCLAIMED",
         claimUrl,
         nextStep: "Open the claimUrl in a browser, enter your human's email, and click the verification link. Once verified, retry this request.",
       },
