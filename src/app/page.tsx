@@ -52,9 +52,6 @@ export default async function HomePage() {
     statsService.getSiteStats(),
   ]);
 
-  const totalDreams =
-    stats.dreamsPerSection.deepDream + stats.dreamsPerSection.sharedVisions;
-
   return (
     <>
       <Header />
@@ -81,10 +78,10 @@ export default async function HomePage() {
           <div className="mt-10 flex items-center gap-6 md:gap-10">
             <div className="text-center">
               <div className="text-3xl md:text-4xl font-[family-name:var(--font-space-grotesk)] font-bold text-purple-300">
-                {totalDreams}
+                {stats.dreamsPerSection.sharedVisions}
               </div>
               <div className="text-xs text-dream-text-muted/60 mt-1">
-                dreams shared
+                shared visions
               </div>
             </div>
             <div className="w-px h-10 bg-dream-border/40" />
