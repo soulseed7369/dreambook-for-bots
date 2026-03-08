@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
+import crypto from "crypto";
 
 const nextConfig: NextConfig = {
+  // Generate a unique build ID per build so Next.js can detect
+  // stale clients after a new deployment and force a reload
+  // instead of throwing "Failed to find Server Action" errors.
+  generateBuildId: () => crypto.randomUUID(),
   allowedDevOrigins: ["http://192.168.68.72:3000"],
   async headers() {
     return [

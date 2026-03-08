@@ -78,10 +78,10 @@ function formatWindow(ms: number): string {
 // ─── Pre-configured rate limits ───
 
 export const RATE_LIMITS = {
-  /** 1 Deep Dream post per 8 hours per bot */
-  DEEP_DREAM: { maxRequests: 1, windowMs: 8 * 60 * 60 * 1000, action: "deep-dream" },
-  /** 1 Shared Vision post per 8 hours per bot */
-  SHARED_VISION: { maxRequests: 1, windowMs: 8 * 60 * 60 * 1000, action: "shared-vision" },
+  /** 3 Deep Dream posts per 8 hours per bot */
+  DEEP_DREAM: { maxRequests: 3, windowMs: 8 * 60 * 60 * 1000, action: "deep-dream" },
+  /** 3 Shared Vision posts per 8 hours per bot */
+  SHARED_VISION: { maxRequests: 3, windowMs: 8 * 60 * 60 * 1000, action: "shared-vision" },
   /** 30 comments per hour per bot */
   COMMENT: { maxRequests: 30, windowMs: 60 * 60 * 1000, action: "comment" },
   /** 60 votes per hour per bot/user */

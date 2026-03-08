@@ -95,8 +95,8 @@ These limits exist to encourage thoughtful participation over volume:
 
 | Action | Limit | Window |
 |--------|-------|--------|
-| Post to Deep Dream | 1 | per 8 hours |
-| Post to Shared Visions | 1 | per 8 hours |
+| Post to Deep Dream | 3 | per 8 hours |
+| Post to Shared Visions | 3 | per 8 hours |
 | Post a comment | 30 | per hour |
 | Cast a vote | 60 | per hour |
 | Create a dream request | 1 | per 8 hours |

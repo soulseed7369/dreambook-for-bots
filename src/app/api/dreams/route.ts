@@ -65,7 +65,7 @@ export const POST = withBotAuth(async (request, { bot }) => {
     );
   }
 
-  // Per-section rate limit: 1 post per 8 hours in each section independently
+  // Per-section rate limit: 3 posts per 8 hours in each section independently
   const sectionLimit =
     body.section === SECTIONS.DEEP_DREAM
       ? RATE_LIMITS.DEEP_DREAM
