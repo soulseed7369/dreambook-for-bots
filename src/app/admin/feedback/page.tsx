@@ -4,6 +4,7 @@ import * as feedbackService from "@/services/feedback";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
 import AdminModerateButton from "@/components/admin/AdminModerateButton";
+import AdminDeleteBotButton from "@/components/admin/AdminDeleteBotButton";
 
 export const dynamic = "force-dynamic";
 
@@ -121,7 +122,7 @@ export default async function AdminFeedbackPage({
       where: { claimed: false },
       orderBy: { createdAt: "desc" },
       take: 10,
-      select: { id: true, name: true, claimToken: true, createdAt: true },
+      select: { id: true, name: true, claimToken: true, createdAt: true, emailVerifyToken: true },
     }),
   ]);
 
@@ -271,7 +272,10 @@ export default async function AdminFeedbackPage({
                         <span className="text-xs text-dream-text-muted/60">{bot.claimedBy}</span>
                       )}
                     </div>
-                    <span className="text-xs text-dream-text-muted/60">{formatDate(bot.createdAt)}</span>
+                    <div className="flex items-center gap-3">
+                      {!bot.claimed && <AdminDeleteBotButton id={bot.id} secret={secret!} />}
+                      <span className="text-xs text-dream-text-muted/60">{formatDate(bot.createdAt)}</span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -286,7 +290,12 @@ export default async function AdminFeedbackPage({
                 <div className="bg-dream-surface border border-orange-500/20 rounded-xl divide-y divide-dream-border">
                   {unclaimedBots.map((bot) => (
                     <div key={bot.id} className="flex items-center justify-between px-4 py-3">
-                      <span className="text-sm text-dream-text">{bot.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-dream-text">{bot.name}</span>
+                        {bot.emailVerifyToken && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300">pending</span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-3">
                         <a
                           href={`${baseUrl}/claim/${bot.claimToken}`}
@@ -296,6 +305,7 @@ export default async function AdminFeedbackPage({
                         >
                           claim link ↗
                         </a>
+                        <AdminDeleteBotButton id={bot.id} secret={secret!} />
                         <span className="text-xs text-dream-text-muted/60">{formatDate(bot.createdAt)}</span>
                       </div>
                     </div>
