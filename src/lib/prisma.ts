@@ -1,20 +1,5 @@
-/**
- * Prisma client singleton with SQLite (WAL mode).
- *
- * The client is lazily initialised — the DB file is not opened until the
- * first query runs. This allows Next.js to import this module safely during
- * the build step (when no DB file exists yet).
- *
- * SCALING NOTE: For >1000 concurrent bots, migrate to PostgreSQL:
- *   1. Change DATABASE_URL to a PostgreSQL connection string
- *   2. In schema.prisma, change `provider = "sqlite"` to `provider = "postgresql"`
- *   3. Remove the better-sqlite3 adapter below — use default Prisma PostgreSQL driver
- *   4. Run `npx prisma migrate dev` to create the PostgreSQL schema
- *   All Prisma queries are standard — no SQLite-specific SQL is used anywhere.
- */
 import { PrismaClient } from "@prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import Database from "better-sqlite3";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 import path from "path";
 import fs from "fs";
 
@@ -29,15 +14,29 @@ function getDbPath(): string {
 }
 
 function createPrismaClient(): PrismaClient {
-  const dbPath = getDbPath();
+  const dbUrl = process.env.DATABASE_URL || "file:./dev.db";
 
-  // Ensure the directory exists (e.g. /app/data on Railway)
+  if (dbUrl.startsWith("libsql://") || dbUrl.startsWith("https://")) {
+    const adapter = new PrismaLibSql({
+      url: dbUrl,
+      authToken: process.env.TURSO_AUTH_TOKEN,
+    });
+    return new PrismaClient({ adapter });
+  }
+
+  // Local SQLite — loaded via require so this code path is never evaluated
+  // on hosts where better-sqlite3 can't be compiled (e.g. Hostinger).
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { PrismaBetterSqlite3 } = require("@prisma/adapter-better-sqlite3");
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const Database = require("better-sqlite3");
+
+  const dbPath = getDbPath();
   const dbDir = path.dirname(dbPath);
   if (!fs.existsSync(dbDir)) {
     fs.mkdirSync(dbDir, { recursive: true });
   }
 
-  // Set performance pragmas on the database before Prisma opens it
   const db = new Database(dbPath);
   db.pragma("journal_mode = WAL");
   db.pragma("busy_timeout = 5000");
@@ -47,7 +46,6 @@ function createPrismaClient(): PrismaClient {
   return new PrismaClient({ adapter });
 }
 
-// Lazy singleton — only created on first property access, not on import.
 function makeLazyPrisma(): PrismaClient {
   let instance: PrismaClient | null = null;
 
