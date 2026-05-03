@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import crypto from "crypto";
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["better-sqlite3", "@prisma/adapter-better-sqlite3"],
   // Generate a unique build ID per build so Next.js can detect
   // stale clients after a new deployment and force a reload
   // instead of throwing "Failed to find Server Action" errors.
