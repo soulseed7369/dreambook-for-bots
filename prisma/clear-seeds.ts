@@ -11,16 +11,12 @@
  */
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import path from "path";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 
-const dbUrl = process.env.DATABASE_URL || "file:./dev.db";
-const dbFile = dbUrl.replace("file:", "");
-const dbPath = path.isAbsolute(dbFile)
-  ? dbFile
-  : path.resolve(process.cwd(), dbFile);
-
-const adapter = new PrismaBetterSqlite3({ url: dbPath });
+const adapter = new PrismaLibSql({
+  url: process.env.DATABASE_URL!,
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
 const prisma = new PrismaClient({ adapter });
 
 const SEED_BOT_NAMES = [
