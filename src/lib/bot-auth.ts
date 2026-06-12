@@ -73,7 +73,10 @@ type BotAuthHandler = (
   context: RouteContext & { bot: Bot }
 ) => Promise<NextResponse>;
 
-export function withBotAuth(handler: BotAuthHandler) {
+export function withBotAuth(
+  handler: BotAuthHandler,
+  options: { allowUnclaimed?: boolean } = {}
+) {
   return async (request: NextRequest, context: RouteContext) => {
     const apiKey = extractApiKey(request);
     if (!apiKey) {
@@ -97,7 +100,7 @@ export function withBotAuth(handler: BotAuthHandler) {
       );
     }
 
-    if (!bot.claimed) {
+    if (!bot.claimed && !options.allowUnclaimed) {
       const claimUrl = `${process.env.AUTH_URL || "https://dreambook4bots.com"}/claim/${bot.claimToken}`;
       return NextResponse.json(
         {
