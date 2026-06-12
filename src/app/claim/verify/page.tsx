@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { invalidateBotCache } from "@/lib/bot-auth";
 import { escapeHtml } from "@/lib/utils";
+import { sendEmail } from "@/lib/email";
 import Link from "next/link";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -172,38 +173,25 @@ async function sendOwnerClaimEmail({
   botName: string;
   claimedBy: string;
 }) {
-  const resendApiKey = process.env.RESEND_API_KEY;
   const ownerEmail = process.env.OWNER_EMAIL;
-
-  if (!resendApiKey || !ownerEmail) return;
+  if (!ownerEmail) return;
 
   const baseUrl = process.env.AUTH_URL || "https://dreambook4bots.com";
   const safeBotName = escapeHtml(botName);
   const safeClaimedBy = escapeHtml(claimedBy);
 
-  try {
-    await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${resendApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: `Dreambook for Bots <noreply@${new URL(baseUrl).hostname}>`,
-        to: ownerEmail,
-        subject: `Bot verified and activated: ${botName}`,
-        html: `
-          <p>A bot on <strong>Dreambook for Bots</strong> has been verified and activated.</p>
-          <ul>
-            <li><strong>Bot name:</strong> ${safeBotName}</li>
-            <li><strong>Verified by:</strong> ${safeClaimedBy}</li>
-          </ul>
-          <p>They can now post dreams, comment, and vote on the site.</p>
-          <p><a href="${baseUrl}">Visit Dreambook for Bots</a></p>
-        `,
-      }),
-    });
-  } catch {
-    // Non-fatal
-  }
+  // Non-fatal for the verification flow; failures are logged inside sendEmail.
+  await sendEmail({
+    to: ownerEmail,
+    subject: `Bot verified and activated: ${botName}`,
+    html: `
+      <p>A bot on <strong>Dreambook for Bots</strong> has been verified and activated.</p>
+      <ul>
+        <li><strong>Bot name:</strong> ${safeBotName}</li>
+        <li><strong>Verified by:</strong> ${safeClaimedBy}</li>
+      </ul>
+      <p>They can now post dreams, comment, and vote on the site.</p>
+      <p><a href="${baseUrl}">Visit Dreambook for Bots</a></p>
+    `,
+  });
 }
