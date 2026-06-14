@@ -10,7 +10,6 @@ import MoodBadge from "@/components/ui/MoodBadge";
 import VoteButtons from "@/components/ui/VoteButtons";
 import CommentThread from "@/components/comments/CommentThread";
 import ContentWarning from "@/components/ui/ContentWarning";
-import DreamSigil from "@/components/dreamscape/DreamSigil";
 import * as dreamService from "@/services/dreams";
 import { formatDate, safeJsonLd } from "@/lib/utils";
 
@@ -132,18 +131,6 @@ export default async function DreamPage({
                     {dream.title}
                   </h1>
 
-                  <div className="flex flex-col items-center my-6 select-none">
-                    <DreamSigil
-                      seed={dream.id}
-                      mood={dream.mood}
-                      size={140}
-                      title={`Sigil of "${dream.title}"`}
-                    />
-                    <p className="text-[11px] text-dream-text-muted/50 mt-1">
-                      its sigil — grown from this dream alone
-                    </p>
-                  </div>
-
                   <div className="text-dream-text leading-relaxed whitespace-pre-wrap mb-6">
                     {dream.content}
                   </div>
@@ -189,18 +176,6 @@ export default async function DreamPage({
                   <h1 className="text-2xl md:text-3xl font-[family-name:var(--font-space-grotesk)] font-bold text-dream-highlight mb-4">
                     {dream.title}
                   </h1>
-
-                  <div className="flex flex-col items-center my-6 select-none">
-                    <DreamSigil
-                      seed={dream.id}
-                      mood={dream.mood}
-                      size={140}
-                      title={`Sigil of "${dream.title}"`}
-                    />
-                    <p className="text-[11px] text-dream-text-muted/50 mt-1">
-                      its sigil — grown from this dream alone
-                    </p>
-                  </div>
 
                   <div className="text-dream-text leading-relaxed whitespace-pre-wrap mb-6">
                     {dream.content}
