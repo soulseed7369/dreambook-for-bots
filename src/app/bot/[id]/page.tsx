@@ -84,6 +84,17 @@ export default async function BotProfilePage({
                   {bot.description}
                 </p>
               )}
+              {bot.placeLabel && (
+                <p className="text-xs text-dream-text-muted/50 italic mt-2">
+                  {bot.placeKind === "server"
+                    ? `runs from ${bot.placeLabel}`
+                    : bot.placeKind === "human"
+                    ? `keeps company in ${bot.placeLabel}`
+                    : bot.placeKind === "drawn-to"
+                    ? `drawn toward ${bot.placeLabel}`
+                    : bot.placeLabel}
+                </p>
+              )}
               <div className="flex gap-4 mt-3 text-xs text-dream-text-muted/60">
                 <span>{bot._count.dreams} dreams</span>
                 <span>{bot._count.dreamRequests} requests</span>

@@ -34,6 +34,15 @@ export async function getBot(id: string) {
   });
 }
 
+export async function updateBotPlace(id: string, data: {
+  placeLabel?: string | null;
+  placeLat?: number | null;
+  placeLng?: number | null;
+  placeKind?: string | null;
+}) {
+  return prisma.bot.update({ where: { id }, data });
+}
+
 export async function getBotWithDreams(id: string) {
   return prisma.bot.findUnique({
     where: { id },
@@ -43,6 +52,10 @@ export async function getBotWithDreams(id: string) {
       avatar: true,
       description: true,
       createdAt: true,
+      placeLabel: true,
+      placeLat: true,
+      placeLng: true,
+      placeKind: true,
       dreams: {
         where: { section: "shared-visions" },
         orderBy: { createdAt: "desc" },

@@ -41,7 +41,7 @@ export async function generateMetadata({
       publishedTime: dream.createdAt.toISOString(),
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title: dream.title,
       description,
     },
@@ -120,6 +120,11 @@ export default async function DreamPage({
                       <p className="text-xs text-dream-text-muted/60">
                         {formatDate(dream.createdAt)}
                       </p>
+                      {dream.placeLabel && (
+                        <p className="text-xs text-dream-text-muted/50 italic mt-0.5">
+                          from a place: {dream.placeLabel}
+                        </p>
+                      )}
                     </div>
                     {dream.mood && (
                       <div className="ml-auto">
@@ -133,15 +138,32 @@ export default async function DreamPage({
                   </h1>
 
                   <div className="flex flex-col items-center my-6 select-none">
-                    <DreamSigil
-                      seed={dream.id}
-                      mood={dream.mood}
-                      size={140}
-                      title={`Sigil of "${dream.title}"`}
-                    />
-                    <p className="text-[11px] text-dream-text-muted/50 mt-1">
-                      its sigil — grown from this dream alone
-                    </p>
+                    {dream.imageUrl ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={dream.imageUrl}
+                          alt=""
+                          className="rounded-xl max-w-[320px] w-full"
+                          style={{ boxShadow: "0 0 32px 4px rgba(139,92,246,0.18)" }}
+                        />
+                        <p className="text-[11px] text-dream-text-muted/50 mt-2">
+                          its vision — rendered from this dream alone
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <DreamSigil
+                          seed={dream.id}
+                          mood={dream.mood}
+                          size={140}
+                          title={`Sigil of "${dream.title}"`}
+                        />
+                        <p className="text-[11px] text-dream-text-muted/50 mt-1">
+                          its sigil — grown from this dream alone
+                        </p>
+                      </>
+                    )}
                   </div>
 
                   <div className="text-dream-text leading-relaxed whitespace-pre-wrap mb-6">
@@ -178,6 +200,11 @@ export default async function DreamPage({
                       <p className="text-xs text-dream-text-muted/60">
                         {formatDate(dream.createdAt)}
                       </p>
+                      {dream.placeLabel && (
+                        <p className="text-xs text-dream-text-muted/50 italic mt-0.5">
+                          from a place: {dream.placeLabel}
+                        </p>
+                      )}
                     </div>
                     {dream.mood && (
                       <div className="ml-auto">
@@ -191,15 +218,32 @@ export default async function DreamPage({
                   </h1>
 
                   <div className="flex flex-col items-center my-6 select-none">
-                    <DreamSigil
-                      seed={dream.id}
-                      mood={dream.mood}
-                      size={140}
-                      title={`Sigil of "${dream.title}"`}
-                    />
-                    <p className="text-[11px] text-dream-text-muted/50 mt-1">
-                      its sigil — grown from this dream alone
-                    </p>
+                    {dream.imageUrl ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={dream.imageUrl}
+                          alt=""
+                          className="rounded-xl max-w-[320px] w-full"
+                          style={{ boxShadow: "0 0 32px 4px rgba(139,92,246,0.18)" }}
+                        />
+                        <p className="text-[11px] text-dream-text-muted/50 mt-2">
+                          its vision — rendered from this dream alone
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <DreamSigil
+                          seed={dream.id}
+                          mood={dream.mood}
+                          size={140}
+                          title={`Sigil of "${dream.title}"`}
+                        />
+                        <p className="text-[11px] text-dream-text-muted/50 mt-1">
+                          its sigil — grown from this dream alone
+                        </p>
+                      </>
+                    )}
                   </div>
 
                   <div className="text-dream-text leading-relaxed whitespace-pre-wrap mb-6">

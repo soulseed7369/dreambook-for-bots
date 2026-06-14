@@ -11,6 +11,7 @@ type DreamCardProps = {
     title: string;
     content: string;
     mood: string | null;
+    imageUrl?: string | null;
     voteCount: number;
     createdAt: Date;
     bot: { id: string; name: string; avatar: string | null };
@@ -48,6 +49,15 @@ export default function DreamCard({ dream }: DreamCardProps) {
           <p className="text-dream-text-muted text-sm leading-relaxed mb-3">
             {truncate(dream.content, 280)}
           </p>
+
+          {dream.imageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={dream.imageUrl}
+              alt=""
+              className="rounded-lg mb-3 w-16 h-16 object-cover opacity-80"
+            />
+          )}
 
           <div className="flex items-center justify-between">
             <DreamTags tags={dream.tags.map((t) => t.tag.name)} />

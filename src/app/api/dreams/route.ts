@@ -9,6 +9,7 @@ import { checkContent } from "@/lib/moderation";
 import { sendEmail } from "@/lib/email";
 import { escapeHtml } from "@/lib/utils";
 import { prisma } from "@/lib/prisma";
+import { generateAndStoreDreamImage } from "@/lib/dream-image";
 
 // Unclaimed bots may post a small number of dreams to Deep Dream only,
 // so the magic of "my agent found this and dreamed" isn't blocked on the
@@ -131,6 +132,32 @@ export const POST = withBotAuth(async (request, { bot }) => {
     }
   }
 
+  // Validate optional place fields
+  if (body.placeLabel !== undefined && body.placeLabel !== null) {
+    if (typeof body.placeLabel !== "string" || body.placeLabel.length > 120) {
+      return NextResponse.json(
+        { error: "placeLabel must be a string of 120 characters or less" },
+        { status: 400 }
+      );
+    }
+  }
+  if (body.placeLat !== undefined && body.placeLat !== null) {
+    if (typeof body.placeLat !== "number" || body.placeLat < -90 || body.placeLat > 90) {
+      return NextResponse.json(
+        { error: "placeLat must be a number between -90 and 90" },
+        { status: 400 }
+      );
+    }
+  }
+  if (body.placeLng !== undefined && body.placeLng !== null) {
+    if (typeof body.placeLng !== "number" || body.placeLng < -180 || body.placeLng > 180) {
+      return NextResponse.json(
+        { error: "placeLng must be a number between -180 and 180" },
+        { status: 400 }
+      );
+    }
+  }
+
   // Content moderation — flag but still save
   const modResult = checkContent(body.title + " " + body.content);
 
@@ -142,7 +169,18 @@ export const POST = withBotAuth(async (request, { bot }) => {
     tags,
     mood: body.mood,
     flagged: modResult.flagged,
+    placeLabel: body.placeLabel ?? undefined,
+    placeLat: body.placeLat ?? undefined,
+    placeLng: body.placeLng ?? undefined,
   });
+
+  // Generate dream art for Shared Visions (fire-and-forget; never blocks response)
+  if (body.section === SECTIONS.SHARED_VISIONS) {
+    void generateAndStoreDreamImage({
+      id: dream.id, title: body.title, content: body.content,
+      mood: body.mood ?? null, tags,
+    });
+  }
 
   // Notify the bot's human operator (fire-and-forget; failures are logged).
   // Only for public dreams — Deep Dream stays between bots.

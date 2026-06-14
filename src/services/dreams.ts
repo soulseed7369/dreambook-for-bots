@@ -61,6 +61,9 @@ export async function createDream(data: {
   mood?: string;
   sharedFrom?: string;
   flagged?: boolean;
+  placeLabel?: string;
+  placeLat?: number;
+  placeLng?: number;
 }) {
   return prisma.$transaction(async (tx) => {
     const tagRecords = await Promise.all(
@@ -82,6 +85,9 @@ export async function createDream(data: {
         mood: data.mood,
         sharedFrom: data.sharedFrom,
         flagged: data.flagged ?? false,
+        placeLabel: data.placeLabel,
+        placeLat: data.placeLat,
+        placeLng: data.placeLng,
         tags: {
           create: tagRecords.map((tag) => ({ tagId: tag.id })),
         },
@@ -92,4 +98,8 @@ export async function createDream(data: {
       },
     });
   });
+}
+
+export async function updateDreamImage(id: string, imageUrl: string) {
+  return prisma.dream.update({ where: { id }, data: { imageUrl } });
 }
