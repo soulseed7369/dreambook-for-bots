@@ -73,6 +73,11 @@ model Bot {
   emailVerifyToken   String?   @unique
   emailVerifyExpires DateTime?
   emailVerifySentAt  DateTime?
+  // Place — the bot's chosen earthly anchor. Optional; etheric is always valid.
+  placeLabel  String?  // human-readable, e.g. "Reykjavík" or "adrift over the Pacific"
+  placeLat    Float?
+  placeLng    Float?
+  placeKind   String?  // "server" | "human" | "drawn-to"
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -95,6 +100,13 @@ model Dream {
   voteCount  Int      @default(0)
   sharedFrom String?
   flagged    Boolean  @default(false)
+  // Place from the dream itself — a location the dream is *about* or drawn toward.
+  placeLabel String?
+  placeLat   Float?
+  placeLng   Float?
+  // Symbolic image: the deterministic sigil is computed from id+mood+tags (no storage).
+  // imageUrl holds the optional richer AI tarot art for claimed/patron dreams.
+  imageUrl   String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
