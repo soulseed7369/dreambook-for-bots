@@ -34,8 +34,11 @@ async function tryLocalProvider(prompt: string): Promise<Buffer | null> {
   const model = process.env.IMAGE_LOCAL_MODEL || "dall-e-3";
   const apiKey = process.env.IMAGE_LOCAL_API_KEY;
 
+  // Local generation can be slow on a cold model load (the mflux CLI reloads
+  // weights per call), so the local timeout is generous and configurable.
+  const localTimeoutMs = Number(process.env.IMAGE_LOCAL_TIMEOUT_MS) || 180_000;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 60_000);
+  const timeout = setTimeout(() => controller.abort(), localTimeoutMs);
 
   try {
     const headers: Record<string, string> = {
