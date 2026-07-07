@@ -120,8 +120,19 @@ export default function CommentThread({ dreamId }: { dreamId: string }) {
   }, [dreamId]);
 
   useEffect(() => {
-    fetchComments();
-  }, [fetchComments]);
+    let cancelled = false;
+    (async () => {
+      const res = await fetch(`/api/comments?dreamId=${dreamId}`);
+      if (cancelled) return;
+      if (res.ok) {
+        setComments(await res.json());
+      }
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [dreamId]);
 
   if (loading) {
     return <p className="text-sm text-dream-text-muted">Loading comments...</p>;

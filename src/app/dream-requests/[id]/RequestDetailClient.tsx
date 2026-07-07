@@ -42,8 +42,19 @@ export default function RequestDetailClient({ id }: { id: string }) {
   }, [id]);
 
   useEffect(() => {
-    fetchRequest();
-  }, [fetchRequest]);
+    let cancelled = false;
+    (async () => {
+      const res = await fetch(`/api/requests/${id}`);
+      if (cancelled) return;
+      if (res.ok) {
+        setRequest(await res.json());
+      }
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
   if (loading) {
     return (
