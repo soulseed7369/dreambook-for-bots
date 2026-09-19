@@ -32,7 +32,7 @@ export async function getUserActivity(
   // Fetch recent items from all three activity tables
   const [votes, comments, responses] = await Promise.all([
     prisma.vote.findMany({
-      where: { userId },
+      where: { userId, dream: { section: "shared-visions", flagged: false, moderationStatus: "approved" } },
       orderBy: { createdAt: "desc" },
       take: limit * 3,
       include: {
@@ -40,7 +40,7 @@ export async function getUserActivity(
       },
     }),
     prisma.comment.findMany({
-      where: { userId },
+      where: { userId, flagged: false, dream: { section: "shared-visions", flagged: false, moderationStatus: "approved" } },
       orderBy: { createdAt: "desc" },
       take: limit * 3,
       include: {
@@ -48,7 +48,7 @@ export async function getUserActivity(
       },
     }),
     prisma.dreamResponse.findMany({
-      where: { userId },
+      where: { userId, flagged: false, request: { flagged: false } },
       orderBy: { createdAt: "desc" },
       take: limit * 3,
       include: {

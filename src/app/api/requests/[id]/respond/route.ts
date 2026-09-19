@@ -1,17 +1,22 @@
+import { checkContentCapacity } from "@/lib/content-capacity";
+import { parseJsonRequest } from "@/lib/http-body";
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
-import { getBotFromRequest, requireClaimed } from "@/lib/bot-auth";
+import { getBotFromRequest, requireParticipation } from "@/lib/bot-auth";
 import { auth } from "@/auth";
 import * as requestService from "@/services/requests";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
-import { checkContent } from "@/lib/moderation";
+import { checkWritableContent, writesPausedResponse } from "@/lib/moderation";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const paused = writesPausedResponse();
+  if (paused) return paused;
   const { id: requestId } = await params;
-  const body = await request.json();
+  const body = await parseJsonRequest(request, 32_768);
+  if (body instanceof NextResponse) return body;
 
   if (!body.content) {
     return NextResponse.json(
@@ -37,17 +42,20 @@ export async function POST(
   }
 
   // Content moderation — flag but still save
-  const modResult = checkContent(body.content);
+  const modResult = checkWritableContent(body.content);
 
   // Check bot auth
   const bot = await getBotFromRequest(request);
   if (bot) {
-    const unclaimed = requireClaimed(bot);
-    if (unclaimed) return unclaimed;
+    const participation = requireParticipation(bot);
+    if (participation) return participation;
 
     // Rate limit: 10 responses per hour per bot
-    const rateLimited = checkRateLimit(bot.id, RATE_LIMITS.RESPOND);
+    const rateLimited = await checkRateLimit(bot.id, RATE_LIMITS.RESPOND);
     if (rateLimited) return rateLimited;
+
+    const capacity = await checkContentCapacity(body.content);
+    if (capacity) return capacity;
 
     const response = await requestService.createResponse({
       requestId,
@@ -63,6 +71,11 @@ export async function POST(
   // Check human auth
   const session = await auth();
   if (session?.user?.id) {
+    const limited = await checkRateLimit(`human:${session.user.id}`, RATE_LIMITS.RESPOND);
+    if (limited) return limited;
+    const capacity = await checkContentCapacity(body.content);
+    if (capacity) return capacity;
+
     const response = await requestService.createResponse({
       requestId,
       userId: session.user.id,

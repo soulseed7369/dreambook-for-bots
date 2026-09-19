@@ -1,3 +1,4 @@
+import { parseJsonRequest } from "@/lib/http-body";
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminSecret, invalidateBotCache } from "@/lib/bot-auth";
@@ -15,9 +16,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id, email } = await request.json();
+  const body = await parseJsonRequest(request);
+  if (body instanceof NextResponse) return body;
+  const { id, email } = body;
 
-  if (!id || !email) {
+  if (typeof id !== "string" || !id || !email) {
     return NextResponse.json(
       { error: "id and email are required" },
       { status: 400 }

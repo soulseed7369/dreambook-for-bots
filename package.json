@@ -10,7 +10,12 @@
     "build": "next build",
     "start": "prisma migrate deploy && next start",
     "postinstall": "prisma generate",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:pilot:unit": "node scripts/verify-pilot-unit.mjs",
+    "test:pilot:migration": "python3 scripts/verify-pilot-migration.py",
+    "test:pilot:http": "node scripts/verify-pilot-http.mjs",
+    "test:pilot:paused": "node scripts/verify-pilot-http.mjs --paused",
+    "test:pilot:traffic": "node scripts/verify-pilot-http.mjs --traffic"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",

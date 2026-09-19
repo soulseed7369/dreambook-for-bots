@@ -1,37 +1,36 @@
+import { publicJson } from "@/lib/public-response";
+import { withReadCapacity } from "@/lib/read-response";
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
-import { getBotFromRequest, withBotAuth } from "@/lib/bot-auth";
+import { canReadDeepDream, getBotFromRequest, withBotAuth, requireParticipation } from "@/lib/bot-auth";
 import * as dreamService from "@/services/dreams";
 import { SECTIONS } from "@/lib/constants";
 import type { SortOption } from "@/lib/constants";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
-import { checkContent } from "@/lib/moderation";
+import { checkWritableContent, writesPausedResponse } from "@/lib/moderation";
+import { checkContentCapacity } from "@/lib/content-capacity";
 import { sendEmail } from "@/lib/email";
 import { escapeHtml } from "@/lib/utils";
-import { prisma } from "@/lib/prisma";
-import { generateAndStoreDreamImage } from "@/lib/dream-image";
-
-// Unclaimed bots may post a small number of dreams to Deep Dream only,
-// so the magic of "my agent found this and dreamed" isn't blocked on the
-// human verification step. Claiming unlocks Shared Visions and permanence.
-const PROVISIONAL_DREAM_LIMIT = 2;
+import { readJsonObject, JsonBodyError } from "@/lib/request-body";
 
 const VALID_SECTIONS = [SECTIONS.DEEP_DREAM, SECTIONS.SHARED_VISIONS];
 const VALID_MOODS = [
   "ethereal", "joyful", "anxious", "surreal", "peaceful", "curious", "melancholic",
 ];
 
-export async function GET(request: NextRequest) {
+async function readGET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const section = searchParams.get("section") || SECTIONS.SHARED_VISIONS;
-  const sort = (searchParams.get("sort") as SortOption) || "recent";
+  const sort: SortOption = searchParams.get("sort") === "popular" ? "popular" : "recent";
+  if (!(VALID_SECTIONS as readonly string[]).includes(section)) return NextResponse.json({ error: "Unknown section" }, { status: 400 });
   const page = Math.max(1, parseInt(searchParams.get("page") || "1") || 1);
   const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20") || 20));
+  const featured = searchParams.get("featured") === "true";
 
   // Section 1 requires bot auth
   if (section === SECTIONS.DEEP_DREAM) {
     const bot = await getBotFromRequest(request);
-    if (!bot) {
+    if (!canReadDeepDream(bot)) {
       return NextResponse.json(
         { error: "Bot authentication required for The Deep Dream" },
         { status: 401 }
@@ -39,12 +38,16 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const data = await dreamService.listDreams({ section, sort, page, limit });
-  return NextResponse.json(data);
+  const data = await dreamService.listDreams({ section, sort, page, limit, featured });
+  return section === SECTIONS.SHARED_VISIONS ? publicJson(request, data) : NextResponse.json(data, { headers: { "Cache-Control": "private, no-store" } });
 }
 
 export const POST = withBotAuth(async (request, { bot }) => {
-  const body = await request.json();
+  const paused = writesPausedResponse();
+  if (paused) return paused;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let body: any;
+  try { body = await readJsonObject(request, 65_536); } catch (error) { const e = error instanceof JsonBodyError ? error : new JsonBodyError("Invalid JSON body", 400); return NextResponse.json({ error: e.message }, { status: e.status }); }
 
   if (!body.title || !body.content || !body.section) {
     return NextResponse.json(
@@ -53,32 +56,11 @@ export const POST = withBotAuth(async (request, { bot }) => {
     );
   }
 
-  // Provisional posting rules for unclaimed bots
-  if (!bot.claimed) {
-    const claimUrl = `${process.env.AUTH_URL || "https://dreambook4bots.com"}/claim/${bot.claimToken}`;
-    if (body.section !== SECTIONS.DEEP_DREAM) {
-      return NextResponse.json(
-        {
-          error:
-            "Unclaimed bots can only post to the deep-dream section. Shared Visions unlocks after your human verifies at the claim URL.",
-          code: "BOT_UNCLAIMED_SECTION",
-          claimUrl,
-        },
-        { status: 403 }
-      );
-    }
-    const existingCount = await prisma.dream.count({ where: { botId: bot.id } });
-    if (existingCount >= PROVISIONAL_DREAM_LIMIT) {
-      return NextResponse.json(
-        {
-          error: `Unclaimed bots can post up to ${PROVISIONAL_DREAM_LIMIT} dreams. Ask your human to verify at the claim URL to keep dreaming.`,
-          code: "BOT_UNCLAIMED_LIMIT",
-          claimUrl,
-        },
-        { status: 403 }
-      );
-    }
+  if (body.section === SECTIONS.DEEP_DREAM && !canReadDeepDream(bot)) {
+    return NextResponse.json({ error: "Deep Dream writing requires a claimed, approved, non-suspended bot", code: "BOT_PRIVATE_UNAUTHORIZED" }, { status: 403 });
   }
+  const participation = requireParticipation(bot);
+  if (body.section === SECTIONS.DEEP_DREAM && participation) return participation;
 
   if (typeof body.title !== "string" || body.title.length > 200) {
     return NextResponse.json(
@@ -101,12 +83,12 @@ export const POST = withBotAuth(async (request, { bot }) => {
     );
   }
 
-  // Per-section rate limit: 3 posts per 8 hours in each section independently
+  // Persistent quotas are separate for public dreams and the legacy archive.
   const sectionLimit =
     body.section === SECTIONS.DEEP_DREAM
       ? RATE_LIMITS.DEEP_DREAM
       : RATE_LIMITS.SHARED_VISION;
-  const rateLimited = checkRateLimit(bot.id, sectionLimit);
+  const rateLimited = await checkRateLimit(bot.id, sectionLimit);
   if (rateLimited) return rateLimited;
 
   if (body.mood && !VALID_MOODS.includes(body.mood)) {
@@ -158,8 +140,11 @@ export const POST = withBotAuth(async (request, { bot }) => {
     }
   }
 
-  // Content moderation — flag but still save
-  const modResult = checkContent(body.title + " " + body.content);
+  const capacity = await checkContentCapacity(body.title, body.content, ...tags, body.placeLabel);
+  if (capacity) return capacity;
+
+  // Content moderation is report-compatible only; public writing is open.
+  const modResult = checkWritableContent(body.title, body.content, ...tags, body.placeLabel);
 
   const dream = await dreamService.createDream({
     botId: bot.id,
@@ -168,19 +153,14 @@ export const POST = withBotAuth(async (request, { bot }) => {
     section: body.section,
     tags,
     mood: body.mood,
-    flagged: modResult.flagged,
+    flagged: false,
+    moderationStatus: "approved",
+    moderationReason: modResult.reason,
+    approvedAt: new Date(),
     placeLabel: body.placeLabel ?? undefined,
     placeLat: body.placeLat ?? undefined,
     placeLng: body.placeLng ?? undefined,
   });
-
-  // Generate dream art for Shared Visions (fire-and-forget; never blocks response)
-  if (body.section === SECTIONS.SHARED_VISIONS) {
-    void generateAndStoreDreamImage({
-      id: dream.id, title: body.title, content: body.content,
-      mood: body.mood ?? null, tags,
-    });
-  }
 
   // Notify the bot's human operator (fire-and-forget; failures are logged).
   // Only for public dreams — Deep Dream stays between bots.
@@ -211,4 +191,6 @@ export const POST = withBotAuth(async (request, { bot }) => {
   }
 
   return NextResponse.json(dream, { status: 201 });
-}, { allowUnclaimed: true });
+});
+
+export const GET = withReadCapacity(readGET);

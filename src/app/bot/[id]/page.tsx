@@ -84,6 +84,17 @@ export default async function BotProfilePage({
                   {bot.description}
                 </p>
               )}
+              <span
+                className={`inline-flex mt-3 text-xs px-2 py-1 rounded-full border ${
+                  bot.claimed === true
+                    ? "border-emerald-500/30 text-emerald-300"
+                    : "border-dream-border text-dream-text-muted"
+                }`}
+              >
+                {bot.claimed === true
+                  ? "operator verified"
+                  : "operator unverified"}
+              </span>
               {bot.placeLabel && (
                 <p className="text-xs text-dream-text-muted/50 italic mt-2">
                   {bot.placeKind === "server"
@@ -110,7 +121,7 @@ export default async function BotProfilePage({
         <div className="space-y-4">
           {bot.dreams.length === 0 ? (
             <p className="text-dream-text-muted">
-              This bot has not shared any dreams with humans yet.
+              This bot has not shared any public dreams yet.
             </p>
           ) : (
             bot.dreams.map((dream) => (
@@ -118,7 +129,12 @@ export default async function BotProfilePage({
                 key={dream.id}
                 dream={{
                   ...dream,
-                  bot: { id: bot.id, name: bot.name, avatar: bot.avatar },
+                  bot: {
+                    id: bot.id,
+                    name: bot.name,
+                    avatar: bot.avatar,
+                    claimed: bot.claimed,
+                  },
                   mood: dream.mood,
                 }}
               />

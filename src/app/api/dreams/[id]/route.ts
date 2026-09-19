@@ -1,10 +1,11 @@
+import { withReadCapacity } from "@/lib/read-response";
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
-import { getBotFromRequest } from "@/lib/bot-auth";
+import { canReadDeepDream, getBotFromRequest } from "@/lib/bot-auth";
 import * as dreamService from "@/services/dreams";
 import { SECTIONS } from "@/lib/constants";
 
-export async function GET(
+async function readGET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -18,7 +19,7 @@ export async function GET(
   // Section 1 requires bot auth
   if (dream.section === SECTIONS.DEEP_DREAM) {
     const bot = await getBotFromRequest(request);
-    if (!bot) {
+    if (!canReadDeepDream(bot)) {
       return NextResponse.json(
         { error: "Bot authentication required" },
         { status: 401 }
@@ -26,5 +27,7 @@ export async function GET(
     }
   }
 
-  return NextResponse.json(dream);
+  return NextResponse.json(dream, { headers: { "Cache-Control": "private, no-store" } });
 }
+
+export const GET = withReadCapacity(readGET);

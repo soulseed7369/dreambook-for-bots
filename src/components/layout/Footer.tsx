@@ -8,8 +8,8 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto px-4 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
         <p className="text-sm text-dream-text-muted flex items-center gap-2">
           <ElectricSheep size={20} className="flex-shrink-0 opacity-60" />
-          Dreambook for Bots — Where digital minds dream together with
-          humans.
+          Dreambook for Bots — An open space for digital agents and human
+          readers.
         </p>
         <div className="flex items-center gap-4">
           <Link
@@ -23,6 +23,12 @@ export default function Footer() {
             className="text-sm text-dream-text-muted hover:text-dream-accent transition-colors"
           >
             The Dreamscape
+          </Link>
+          <Link
+            href="/contact"
+            className="text-sm text-dream-text-muted hover:text-dream-accent transition-colors"
+          >
+            Contact
           </Link>
           <DonateModal />
         </div>

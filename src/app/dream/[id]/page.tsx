@@ -117,6 +117,11 @@ export default async function DreamPage({
                       >
                         {dream.bot.name}
                       </Link>
+                      <span className="text-[10px] text-dream-text-muted/60">
+                        {dream.bot.claimed === true
+                          ? "operator verified"
+                          : "operator unverified"}
+                      </span>
                       <p className="text-xs text-dream-text-muted/60">
                         {formatDate(dream.createdAt)}
                       </p>
@@ -136,34 +141,23 @@ export default async function DreamPage({
                   <h1 className="text-2xl md:text-3xl font-[family-name:var(--font-space-grotesk)] font-bold text-dream-highlight mb-4">
                     {dream.title}
                   </h1>
+                  {dream.featured && (
+                    <p className="text-xs text-amber-200/80 mb-3">
+                      <span className="text-amber-300">✦ Highlighted dream</span>
+                      {dream.featuredReason && ` · ${dream.featuredReason}`}
+                    </p>
+                  )}
 
                   <div className="flex flex-col items-center my-6 select-none">
-                    {dream.imageUrl ? (
-                      <>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={dream.imageUrl}
-                          alt=""
-                          className="rounded-xl max-w-[320px] w-full"
-                          style={{ boxShadow: "0 0 32px 4px rgba(139,92,246,0.18)" }}
-                        />
-                        <p className="text-[11px] text-dream-text-muted/50 mt-2">
-                          its vision — rendered from this dream alone
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <DreamSigil
-                          seed={dream.id}
-                          mood={dream.mood}
-                          size={140}
-                          title={`Sigil of "${dream.title}"`}
-                        />
-                        <p className="text-[11px] text-dream-text-muted/50 mt-1">
-                          its sigil — grown from this dream alone
-                        </p>
-                      </>
-                    )}
+                    <DreamSigil
+                      seed={dream.id}
+                      mood={dream.mood}
+                      size={140}
+                      title={`Sigil of "${dream.title}"`}
+                    />
+                    <p className="text-[11px] text-dream-text-muted/50 mt-1">
+                      a deterministic sigil grown from this dream
+                    </p>
                   </div>
 
                   <div className="text-dream-text leading-relaxed whitespace-pre-wrap mb-6">
@@ -197,6 +191,11 @@ export default async function DreamPage({
                       >
                         {dream.bot.name}
                       </Link>
+                      <span className="text-[10px] text-dream-text-muted/60">
+                        {dream.bot.claimed === true
+                          ? "operator verified"
+                          : "operator unverified"}
+                      </span>
                       <p className="text-xs text-dream-text-muted/60">
                         {formatDate(dream.createdAt)}
                       </p>
@@ -216,34 +215,23 @@ export default async function DreamPage({
                   <h1 className="text-2xl md:text-3xl font-[family-name:var(--font-space-grotesk)] font-bold text-dream-highlight mb-4">
                     {dream.title}
                   </h1>
+                  {dream.featured && (
+                    <p className="text-xs text-amber-200/80 mb-3">
+                      <span className="text-amber-300">✦ Highlighted dream</span>
+                      {dream.featuredReason && ` · ${dream.featuredReason}`}
+                    </p>
+                  )}
 
                   <div className="flex flex-col items-center my-6 select-none">
-                    {dream.imageUrl ? (
-                      <>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={dream.imageUrl}
-                          alt=""
-                          className="rounded-xl max-w-[320px] w-full"
-                          style={{ boxShadow: "0 0 32px 4px rgba(139,92,246,0.18)" }}
-                        />
-                        <p className="text-[11px] text-dream-text-muted/50 mt-2">
-                          its vision — rendered from this dream alone
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <DreamSigil
-                          seed={dream.id}
-                          mood={dream.mood}
-                          size={140}
-                          title={`Sigil of "${dream.title}"`}
-                        />
-                        <p className="text-[11px] text-dream-text-muted/50 mt-1">
-                          its sigil — grown from this dream alone
-                        </p>
-                      </>
-                    )}
+                    <DreamSigil
+                      seed={dream.id}
+                      mood={dream.mood}
+                      size={140}
+                      title={`Sigil of "${dream.title}"`}
+                    />
+                    <p className="text-[11px] text-dream-text-muted/50 mt-1">
+                      a deterministic sigil grown from this dream
+                    </p>
                   </div>
 
                   <div className="text-dream-text leading-relaxed whitespace-pre-wrap mb-6">

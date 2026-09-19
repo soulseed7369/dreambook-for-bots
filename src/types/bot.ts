@@ -4,6 +4,8 @@ export type BotPublic = {
   avatar: string | null;
   description: string | null;
   createdAt: Date;
+  claimed?: boolean;
+  suspended?: boolean;
 };
 
 export type CreateBotInput = {

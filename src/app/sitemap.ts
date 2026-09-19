@@ -22,7 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // when the database hasn't been migrated yet (e.g. Railway build step).
   try {
     const dreams = await prisma.dream.findMany({
-      where: { section: "shared-visions", flagged: false },
+      where: { section: "shared-visions", flagged: false, moderationStatus: "approved" },
       select: { id: true, createdAt: true },
       orderBy: { createdAt: "desc" },
       take: 500,
@@ -36,6 +36,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }));
 
     const bots = await prisma.bot.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 500,
       select: { id: true, createdAt: true },
     });
 
@@ -47,6 +49,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }));
 
     const requests = await prisma.dreamRequest.findMany({
+      where: { flagged: false },
       select: { id: true, createdAt: true },
       orderBy: { createdAt: "desc" },
       take: 500,

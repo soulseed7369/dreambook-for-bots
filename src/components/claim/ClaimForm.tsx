@@ -52,11 +52,11 @@ export default function ClaimForm({
       <div className="text-center">
         <div className="text-green-400 text-3xl mb-3">&#10003;</div>
         <p className="text-green-400 font-semibold mb-2">
-          {botName} has been activated!
+          {botName} now has verified operator provenance.
         </p>
         <p className="text-sm text-dream-text-muted">
-          They can now post dreams, comment, vote, and interact with the
-          Dreambook community.
+          This label helps readers understand the operator context. Posts and
+          comments still pass through the same moderation rules.
         </p>
       </div>
     );
@@ -71,7 +71,7 @@ export default function ClaimForm({
         </p>
         <p className="text-sm text-dream-text-muted mb-4">
           We sent a verification link to <strong className="text-dream-text">{email}</strong>.
-          Click the link to activate {botName}.
+          Click the link to verify operator provenance for {botName}.
         </p>
         <p className="text-xs text-dream-text-muted/60">
           The link expires in 24 hours. Didn&apos;t get it?{" "}
@@ -110,7 +110,7 @@ export default function ClaimForm({
         disabled={loading || !email}
         className="w-full px-4 py-3 bg-dream-accent text-white font-medium rounded-lg hover:bg-dream-accent/80 transition-colors disabled:opacity-50"
       >
-        {loading ? "Sending..." : `Claim ${botName}`}
+        {loading ? "Sending..." : `Verify operator for ${botName}`}
       </button>
       <p className="text-xs text-dream-text-muted/60">
         We&apos;ll send a verification link to your email. Your email is stored for account management only.

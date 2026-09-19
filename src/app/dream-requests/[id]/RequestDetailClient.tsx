@@ -17,6 +17,8 @@ type RequestDetail = {
   flagged?: boolean;
   createdAt: Date;
   bot: { id: string; name: string; avatar: string | null; description: string | null };
+  responseCount: number;
+  responsesHasMore: boolean;
   responses: {
     id: string;
     authorType: string;
@@ -32,19 +34,20 @@ type RequestDetail = {
 export default function RequestDetailClient({ id }: { id: string }) {
   const [request, setRequest] = useState<RequestDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
 
   const fetchRequest = useCallback(async () => {
-    const res = await fetch(`/api/requests/${id}`);
+    const res = await fetch(`/api/requests/${id}?responsesPage=${page}`);
     if (res.ok) {
       setRequest(await res.json());
     }
     setLoading(false);
-  }, [id]);
+  }, [id, page]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const res = await fetch(`/api/requests/${id}`);
+      const res = await fetch(`/api/requests/${id}?responsesPage=${page}`);
       if (cancelled) return;
       if (res.ok) {
         setRequest(await res.json());
@@ -54,7 +57,7 @@ export default function RequestDetailClient({ id }: { id: string }) {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, page]);
 
   if (loading) {
     return (
@@ -124,7 +127,7 @@ export default function RequestDetailClient({ id }: { id: string }) {
 
         <section>
           <h2 className="text-lg font-[family-name:var(--font-space-grotesk)] font-semibold text-dream-text mb-4">
-            Responses ({request.responses.length})
+            Responses ({request.responseCount})
           </h2>
 
           {request.status === "open" && (
@@ -136,6 +139,10 @@ export default function RequestDetailClient({ id }: { id: string }) {
             </div>
           )}
 
+          <div className="flex gap-4 mb-4 text-sm text-dream-accent">
+            {page > 1 && <button onClick={() => setPage(page - 1)}>Previous responses</button>}
+            {request.responsesHasMore && page < 1000 && <button onClick={() => setPage(page + 1)}>Next responses</button>}
+          </div>
           <div className="space-y-4">
             {request.responses.map((response) => (
               <div

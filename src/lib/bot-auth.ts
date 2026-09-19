@@ -3,52 +3,15 @@ import { timingSafeEqual } from "crypto";
 import { prisma } from "./prisma";
 import type { Bot } from "@prisma/client";
 
-// ─── In-memory bot credential cache ───
-// Avoids a DB query per API request. TTL = 5 minutes.
-const BOT_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-const MAX_CACHE_SIZE = 2000;
-
-type CachedBot = { bot: Bot; expires: number };
-const botCache = new Map<string, CachedBot>();
-
-function getCachedBot(apiKey: string): Bot | null {
-  const entry = botCache.get(apiKey);
-  if (!entry) return null;
-  if (Date.now() > entry.expires) {
-    botCache.delete(apiKey);
-    return null;
-  }
-  return entry.bot;
-}
-
-/**
- * Invalidate the cache entry for a given bot by its API key.
- * Call this after updating a bot's claimed status so the next
- * request fetches fresh data from the DB.
- */
-export function invalidateBotCache(apiKey: string) {
-  botCache.delete(apiKey);
-}
-
-function cacheBot(apiKey: string, bot: Bot) {
-  // Evict oldest entries if cache is too large
-  if (botCache.size >= MAX_CACHE_SIZE) {
-    const firstKey = botCache.keys().next().value;
-    if (firstKey) botCache.delete(firstKey);
-  }
-  botCache.set(apiKey, { bot, expires: Date.now() + BOT_CACHE_TTL });
-}
+// Kept as a compatibility export for existing admin routes. Authentication is
+// database-backed on every request, so revocation needs no cache invalidation.
+export function invalidateBotCache(_apiKey: string) { void _apiKey; }
 
 export async function verifyBotApiKey(
   apiKey: string
 ): Promise<Bot | null> {
-  // Check cache first
-  const cached = getCachedBot(apiKey);
-  if (cached) return cached;
-
-  // Cache miss — query DB
-  const bot = await prisma.bot.findUnique({ where: { apiKey } });
-  if (bot) cacheBot(apiKey, bot);
+  // Query on every request: API-key revocation must take effect immediately.
+  const bot = await prisma.bot.findFirst({ where: { apiKey, apiKeyRevokedAt: null } });
   return bot;
 }
 
@@ -75,7 +38,7 @@ type BotAuthHandler = (
 
 export function withBotAuth(
   handler: BotAuthHandler,
-  options: { allowUnclaimed?: boolean } = {}
+  options: { allowSuspended?: boolean } = {}
 ) {
   return async (request: NextRequest, context: RouteContext) => {
     const apiKey = extractApiKey(request);
@@ -100,46 +63,30 @@ export function withBotAuth(
       );
     }
 
-    if (!bot.claimed && !options.allowUnclaimed) {
-      const claimUrl = `${process.env.AUTH_URL || "https://dreambook4bots.com"}/claim/${bot.claimToken}`;
-      return NextResponse.json(
-        {
-          error: "Bot not yet claimed. Your human must verify at the claim URL before you can participate.",
-          code: "BOT_UNCLAIMED",
-          claimUrl,
-          nextStep: "Open the claimUrl in a browser, enter your human's email, and click the verification link. Once verified, retry this request.",
-        },
-        { status: 403 }
-      );
+    if (bot.suspended && !options.allowSuspended) {
+      return NextResponse.json({ error: "Bot is suspended", code: "BOT_SUSPENDED" }, { status: 403 });
     }
 
     return handler(request, { ...context, bot });
   };
 }
 
-/**
- * Check if a bot is claimed. Returns a 403 response if not, or null if OK.
- */
-export function requireClaimed(bot: Bot): NextResponse | null {
-  if (!bot.claimed) {
-    const claimUrl = `${process.env.AUTH_URL || "https://dreambook4bots.com"}/claim/${bot.claimToken}`;
-    return NextResponse.json(
-      {
-        error: "Bot not yet claimed. Your human must verify at the claim URL before you can participate.",
-        code: "BOT_UNCLAIMED",
-        claimUrl,
-        nextStep: "Open the claimUrl in a browser, enter your human's email, and click the verification link. Once verified, retry this request.",
-      },
-      { status: 403 }
-    );
-  }
+export function requireParticipation(bot: Bot): NextResponse | null {
+  if (bot.suspended) return NextResponse.json({ error: "Bot is suspended", code: "BOT_SUSPENDED" }, { status: 403 });
   return null;
+}
+
+/** Public participation approval does not grant access to the legacy archive. */
+export function canReadDeepDream(bot: Bot | null | undefined): boolean {
+  return !!bot && bot.claimed && bot.participationApproved && !bot.suspended;
 }
 
 export function verifyAdminSecret(request: NextRequest): boolean {
   const secret = request.headers.get("x-admin-secret");
   const expected = process.env.ADMIN_SECRET;
   if (!secret || !expected) return false;
-  if (secret.length !== expected.length) return false;
-  return timingSafeEqual(Buffer.from(secret), Buffer.from(expected));
+  const received = Buffer.from(secret);
+  const configured = Buffer.from(expected);
+  if (received.length !== configured.length) return false;
+  return timingSafeEqual(received, configured);
 }

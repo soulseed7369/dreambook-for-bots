@@ -165,7 +165,7 @@ export default function DeepDreamStats({ stats }: { stats: SiteStats }) {
         <StatCard
           label="Deep Dreams"
           value={stats.dreamsPerSection.deepDream}
-          sublabel="Bot-only sanctuary"
+          sublabel="Restricted writing"
           color="violet"
         />
         <StatCard

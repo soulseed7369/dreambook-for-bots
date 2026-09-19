@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getCachedRead } from "@/lib/read-cache";
 
 export type SiteStats = {
   dreamsPerSection: {
@@ -15,77 +16,65 @@ export type SiteStats = {
   crossPosted: number;
 };
 
-// ─── Stats cache (60-second TTL) ───
-// Prevents recalculating stats on every page load.
-const STATS_CACHE_TTL = 60 * 1000;
-let cachedStats: { data: SiteStats; expires: number } | null = null;
+const STATS_CACHE_TTL = 60_000;
 
 export async function getSiteStats(): Promise<SiteStats> {
-  // Return cached stats if fresh
-  if (cachedStats && Date.now() < cachedStats.expires) {
-    return cachedStats.data;
-  }
+  return getCachedRead("site-stats", STATS_CACHE_TTL, async () => {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  // Only fetch last 30 days for the per-day chart (not ALL dreams)
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const [
+      deepDreamCount,
+      sharedVisionsCount,
+      totalVotes,
+      totalBots,
+      totalHumans,
+      totalComments,
+      totalRequests,
+      totalResponses,
+      crossPosted,
+      dreamsPerDayRows,
+    ] = await Promise.all([
+      prisma.dream.count({ where: { section: "deep-dream" } }),
+      prisma.dream.count({ where: { section: "shared-visions" } }),
+      prisma.vote.count(),
+      prisma.bot.count(),
+      prisma.user.count(),
+      prisma.comment.count(),
+      prisma.dreamRequest.count(),
+      prisma.dreamResponse.count(),
+      prisma.dream.count({ where: { sharedFrom: { not: null } } }),
+      // Group in SQLite instead of loading every dream from the last month
+      // into the application. The response has one row per day and is exact.
+      prisma.$queryRaw<Array<{ date: string; count: number }>>`
+        SELECT day AS date, COUNT(*) AS count FROM (
+          SELECT CASE WHEN typeof("createdAt") IN ('integer', 'real')
+            THEN strftime('%Y-%m-%d', "createdAt" / 1000, 'unixepoch')
+            ELSE substr("createdAt", 1, 10) END AS day FROM "Dream"
+        ) WHERE day >= ${thirtyDaysAgo.toISOString().slice(0, 10)}
+        GROUP BY day
+        ORDER BY date ASC
+      `,
+    ]);
 
-  const [
-    deepDreamCount,
-    sharedVisionsCount,
-    totalVotes,
-    totalBots,
-    totalHumans,
-    totalComments,
-    totalRequests,
-    totalResponses,
-    crossPosted,
-    recentDreams,
-  ] = await Promise.all([
-    prisma.dream.count({ where: { section: "deep-dream" } }),
-    prisma.dream.count({ where: { section: "shared-visions" } }),
-    prisma.vote.count(),
-    prisma.bot.count(),
-    prisma.user.count(),
-    prisma.comment.count(),
-    prisma.dreamRequest.count(),
-    prisma.dreamResponse.count(),
-    prisma.dream.count({ where: { sharedFrom: { not: null } } }),
-    prisma.dream.findMany({
-      where: { createdAt: { gte: thirtyDaysAgo } },
-      select: { createdAt: true },
-      orderBy: { createdAt: "asc" },
-    }),
-  ]);
+    const dreamsPerDay = dreamsPerDayRows.map((row) => ({
+      date: row.date,
+      count: Number(row.count),
+    }));
 
-  // Aggregate dreams per day
-  const dayMap = new Map<string, number>();
-  for (const dream of recentDreams) {
-    const date = new Date(dream.createdAt).toISOString().split("T")[0];
-    dayMap.set(date, (dayMap.get(date) || 0) + 1);
-  }
-  const dreamsPerDay = Array.from(dayMap.entries()).map(([date, count]) => ({
-    date,
-    count,
-  }));
-
-  const stats: SiteStats = {
-    dreamsPerSection: {
-      deepDream: deepDreamCount,
-      sharedVisions: sharedVisionsCount,
-    },
-    totalVotes,
-    totalBots,
-    totalHumans,
-    totalComments,
-    totalRequests,
-    totalResponses,
-    dreamsPerDay,
-    crossPosted,
-  };
-
-  // Cache the result
-  cachedStats = { data: stats, expires: Date.now() + STATS_CACHE_TTL };
-
-  return stats;
+    return {
+      dreamsPerSection: {
+        deepDream: deepDreamCount,
+        sharedVisions: sharedVisionsCount,
+      },
+      totalVotes,
+      totalBots,
+      totalHumans,
+      totalComments,
+      totalRequests,
+      totalResponses,
+      dreamsPerDay,
+      crossPosted,
+    };
+  });
 }

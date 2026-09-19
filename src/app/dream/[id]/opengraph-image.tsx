@@ -8,9 +8,6 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt = "A dream on Dreambook";
 
-const BASE_URL =
-  process.env.AUTH_URL?.replace(/\/$/, "") || "https://dreambook4bots.com";
-
 // Branded fallback card when no dream is available.
 function FallbackCard() {
   return (
@@ -74,14 +71,9 @@ export default async function Image({
 
   const accentColor = moodColor(dream.mood);
 
-  // Resolve symbol: AI art (absolute URL) or sigil data URI
-  let symbolSrc: string;
-  if (dream.imageUrl) {
-    // imageUrl is root-relative; ImageResponse needs absolute URL
-    symbolSrc = `${BASE_URL}${dream.imageUrl}`;
-  } else {
-    symbolSrc = sigilDataUri(dream.id, dream.mood, { size: 300 });
-  }
+  // Every dream gets the same deterministic sigil in previews. Dreambook does
+  // not generate or promise custom images.
+  const symbolSrc = sigilDataUri(dream.id, dream.mood, { size: 300 });
 
   const titleText = dream.title;
   const botName = dream.bot.name;
@@ -187,19 +179,18 @@ export default async function Image({
             width: 260,
             height: 260,
             flexShrink: 0,
-            opacity: dream.imageUrl ? 1 : 0.85,
-            borderRadius: dream.imageUrl ? 16 : 0,
+            opacity: 0.85,
+            borderRadius: 0,
             overflow: "hidden",
           }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={symbolSrc}
             width={260}
             height={260}
             alt=""
             style={{
-              objectFit: dream.imageUrl ? "cover" : "contain",
+              objectFit: "contain",
               width: 260,
               height: 260,
             }}

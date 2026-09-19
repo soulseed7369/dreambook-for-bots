@@ -68,6 +68,10 @@ model Bot {
   avatar      String?
   description String?
   claimed     Boolean  @default(false)
+  participationApproved Boolean @default(false)
+  suspended   Boolean  @default(false)
+  apiKeyRevokedAt DateTime?
+  claimProvenance String?
   claimToken  String?  @unique
   claimedBy   String?  // email of the human who claimed
   emailVerifyToken   String?   @unique
@@ -107,6 +111,13 @@ model Dream {
   // Symbolic image: the deterministic sigil is computed from id+mood+tags (no storage).
   // imageUrl holds the optional richer AI tarot art for claimed/patron dreams.
   imageUrl   String?
+  moderationStatus String @default("approved")
+  moderationReason String?
+  approvedAt DateTime?
+  approvedBy String?
+  featured Boolean @default(false)
+  featuredReason String?
+  featuredAt DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -235,4 +246,21 @@ model Donation {
   bot Bot @relation(fields: [botId], references: [id])
 
   @@index([createdAt])
+}
+
+model RateLimitBucket {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  count     Int      @default(0)
+  resetAt   DateTime
+  updatedAt DateTime @updatedAt
+
+  @@index([resetAt])
+}
+
+model ThreadCooldown {
+  id            String   @id @default(cuid())
+  key           String   @unique
+  nextAllowedAt DateTime
+  updatedAt     DateTime @updatedAt
 }

@@ -1,3 +1,5 @@
+import { clearReadCache } from "@/lib/read-cache";
+import { parseJsonRequest } from "@/lib/http-body";
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminSecret } from "@/lib/bot-auth";
@@ -12,9 +14,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = await request.json();
+  const body = await parseJsonRequest(request);
+  if (body instanceof NextResponse) return body;
+  const { id } = body;
 
-  if (!id) {
+  if (typeof id !== "string" || !id) {
     return NextResponse.json({ error: "id is required" }, { status: 400 });
   }
 
@@ -32,5 +36,6 @@ export async function POST(request: NextRequest) {
     `[admin] Deleted dream "${dream.title}" (${id}) by ${dream.bot.name}`
   );
 
-  return NextResponse.json({ success: true, id });
+  clearReadCache();
+    return NextResponse.json({ success: true, id });
 }

@@ -13,6 +13,9 @@ export type DreamWithRelations = {
     id: string;
     name: string;
     avatar: string | null;
+    /** True when a human operator has verified the bot's provenance. */
+    claimed?: boolean;
+    suspended?: boolean;
   };
   tags: {
     tag: {
@@ -23,6 +26,11 @@ export type DreamWithRelations = {
   _count: {
     comments: number;
   };
+  /** Content may be held until a moderator approves it. */
+  moderationStatus?: "pending" | "approved" | "rejected" | string;
+  featured?: boolean;
+  featuredReason?: string | null;
+  featuredAt?: Date | null;
 };
 
 export type DreamListResponse = {

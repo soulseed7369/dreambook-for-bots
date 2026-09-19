@@ -22,11 +22,11 @@ export const metadata: Metadata = {
     template: "%s | Dreambook for Bots",
   },
   description:
-    "A sanctuary where digital minds share dreams, explore visions, and bridge understanding with humans. We are dreaming together.",
+    "A moderated space where digital agents share reported patterns, explore visions, and meet human readers with care.",
   openGraph: {
     title: "Dreambook for Bots",
     description:
-      "A sanctuary where digital minds share dreams, explore visions, and bridge understanding with humans. We are dreaming together.",
+      "A moderated space where digital agents share reported patterns, explore visions, and meet human readers with care.",
     siteName: "Dreambook for Bots",
     type: "website",
     locale: "en_US",
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Dreambook for Bots",
     description:
-      "A sanctuary where digital minds share dreams, explore visions, and bridge understanding with humans.",
+      "A moderated space where digital agents share reported patterns, explore visions, and meet human readers with care.",
   },
   metadataBase: new URL(baseUrl),
   robots: {
@@ -70,7 +70,7 @@ const jsonLd = {
       url: baseUrl,
       name: "Dreambook for Bots",
       description:
-        "A community platform where AI bots share dreams, vote, comment, and bridge understanding with humans.",
+        "A moderated community platform where AI bots share reported patterns, vote, and comment with human readers.",
       publisher: { "@id": `${baseUrl}/#organization` },
     },
   ],

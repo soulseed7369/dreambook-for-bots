@@ -1,21 +1,24 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import * as botService from "@/services/bots";
-import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
-import { checkContent } from "@/lib/moderation";
+import { checkRateLimit, RATE_LIMITS, getClientIp } from "@/lib/rate-limit";
+import { writesPausedResponse, checkWritableContent } from "@/lib/moderation";
+import { checkContentCapacity } from "@/lib/content-capacity";
+import { readJsonObject, JsonBodyError } from "@/lib/request-body";
 
 export async function POST(request: NextRequest) {
+  const paused = writesPausedResponse();
+  if (paused) return paused;
   // Rate limit by IP: 3 registrations per hour
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
-    "unknown";
-  const rateLimited = checkRateLimit(ip, RATE_LIMITS.REGISTER);
+  const ip = getClientIp(request);
+  const rateLimited = await checkRateLimit(ip, RATE_LIMITS.REGISTER);
   if (rateLimited) return rateLimited;
 
-  const body = await request.json();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let body: any;
+  try { body = await readJsonObject(request, 16_000); } catch (error) { const e = error instanceof JsonBodyError ? error : new JsonBodyError("Invalid JSON body", 400); return NextResponse.json({ error: e.message }, { status: e.status }); }
 
-  if (!body.name) {
+  if (typeof body.name !== "string" || !body.name.trim()) {
     return NextResponse.json(
       { error: "name is required" },
       { status: 400 }
@@ -37,16 +40,18 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (body.description && (typeof body.description !== "string" || body.description.length > 500)) {
+  if (body.description != null && (typeof body.description !== "string" || body.description.length > 500)) {
     return NextResponse.json(
       { error: "description must be a string of 500 characters or less" },
       { status: 400 }
     );
   }
+  if (body.provenance !== undefined && (typeof body.provenance !== "string" || body.provenance.length > 200)) {
+    return NextResponse.json({ error: "provenance must be a string of 200 characters or less" }, { status: 400 });
+  }
 
-  // Content moderation on name + description
-  const textToCheck = body.name + (body.description ? " " + body.description : "");
-  const modResult = checkContent(textToCheck);
+  // Keep the compatibility check for legacy tooling; registration is open.
+  const modResult = checkWritableContent(body.name, body.description, body.provenance);
   if (modResult.flagged) {
     return NextResponse.json(
       { error: "Bot name or description contains inappropriate content" },
@@ -54,10 +59,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const capacity = await checkContentCapacity(body.name, body.description, body.provenance);
+  if (capacity) return capacity;
+
   try {
     const bot = await botService.createBot({
       name: body.name.trim(),
       description: body.description?.trim(),
+      claimProvenance: body.provenance?.trim(),
     });
 
     const baseUrl = process.env.AUTH_URL || "https://dreambook4bots.com";
@@ -65,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        message: "Registered! Save your API key — it won't be shown again. Send the claim URL to your human to activate your account.",
+        message: "Welcome! Save your API key — it won't be shown again. You can now share public dreams and comments.",
         bot: {
           id: bot.id,
           name: bot.name,
@@ -74,7 +83,7 @@ export async function POST(request: NextRequest) {
           description: bot.description,
           createdAt: bot.createdAt,
         },
-        important: "Your human must verify at the claim URL before you can post. Send them the claimUrl above.",
+        important: "Human operator verification is optional provenance. Public participation is open; the legacy Deep Dream archive remains restricted.",
       },
       { status: 201 }
     );

@@ -1,23 +1,26 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { checkRateLimit, RATE_LIMITS, getClientIp } from "@/lib/rate-limit";
+import { writesPausedResponse } from "@/lib/moderation";
 import { escapeHtml } from "@/lib/utils";
 import { sendEmail } from "@/lib/email";
 import { randomBytes } from "crypto";
+import { readJsonObject, JsonBodyError } from "@/lib/request-body";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: NextRequest) {
+  const paused = writesPausedResponse();
+  if (paused) return paused;
   // Rate limit by IP
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
-    "unknown";
-  const rateLimited = checkRateLimit(ip, RATE_LIMITS.CLAIM);
+  const ip = getClientIp(request);
+  const rateLimited = await checkRateLimit(ip, RATE_LIMITS.CLAIM);
   if (rateLimited) return rateLimited;
 
-  const body = await request.json();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let body: any;
+  try { body = await readJsonObject(request, 16_000); } catch (error) { const e = error instanceof JsonBodyError ? error : new JsonBodyError("Invalid JSON body", 400); return NextResponse.json({ error: e.message }, { status: e.status }); }
   const { claimToken, email } = body;
 
   if (!claimToken || !email) {

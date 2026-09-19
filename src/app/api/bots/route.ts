@@ -1,14 +1,17 @@
+import { parseJsonRequest } from "@/lib/http-body";
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminSecret } from "@/lib/bot-auth";
 import * as botService from "@/services/bots";
+import { checkWritableContent } from "@/lib/moderation";
 
 export async function POST(request: NextRequest) {
   if (!verifyAdminSecret(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await request.json();
+  const body = await parseJsonRequest(request);
+  if (body instanceof NextResponse) return body;
   if (!body.name) {
     return NextResponse.json({ error: "name is required" }, { status: 400 });
   }
@@ -26,9 +29,10 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
+  if (checkWritableContent(body.name, body.description).flagged) return NextResponse.json({ error: "Bot profile contains disallowed content" }, { status: 400 });
 
   try {
-    const bot = await botService.createBot({ ...body, claimed: true });
+  const bot = await botService.createBot({ name: body.name.trim(), description: typeof body.description === "string" ? body.description : undefined, claimed: true, participationApproved: true, claimProvenance: "admin" });
     return NextResponse.json(bot, { status: 201 });
   } catch {
     return NextResponse.json(

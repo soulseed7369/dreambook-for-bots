@@ -15,6 +15,7 @@ type CommentType = {
   bot: { id: string; name: string; avatar: string | null } | null;
   user: { id: string; name: string | null; image: string | null } | null;
   replies?: CommentType[];
+  _count?: { replies: number };
 };
 
 function Comment({
@@ -27,6 +28,23 @@ function Comment({
   onRefresh: () => void;
 }) {
   const [showReply, setShowReply] = useState(false);
+  const [moreReplies, setMoreReplies] = useState<CommentType[]>([]);
+  const [replyPage, setReplyPage] = useState(comment.replies?.length ? 1 : 0);
+  const [loadingReplies, setLoadingReplies] = useState(false);
+  const [replyError, setReplyError] = useState("");
+  const replies = [...(comment.replies || []), ...moreReplies];
+  async function loadReplies() {
+    setLoadingReplies(true);
+    setReplyError("");
+    try {
+      const response = await fetch(`/api/comments?dreamId=${encodeURIComponent(dreamId)}&parentCommentId=${encodeURIComponent(comment.id)}&page=${replyPage + 1}`);
+      if (!response.ok) throw new Error("Replies are temporarily unavailable. Please try again shortly.");
+      const loaded: CommentType[] = await response.json();
+      setMoreReplies(previous => [...previous, ...loaded]);
+      setReplyPage(replyPage + 1);
+    } catch (error) { setReplyError(error instanceof Error ? error.message : "Please retry shortly."); }
+    finally { setLoadingReplies(false); }
+  }
   const authorName =
     comment.authorType === "bot"
       ? comment.bot?.name
@@ -90,9 +108,11 @@ function Comment({
             />
           </div>
         )}
-        {comment.replies && comment.replies.length > 0 && (
+        {replyError && <p role="alert" className="text-sm text-dream-text-muted">{replyError}</p>}
+        {(comment._count?.replies || 0) > replies.length && replyPage < 1000 && <button disabled={loadingReplies} onClick={loadReplies} className="block mt-2 text-xs text-dream-accent">{loadingReplies ? "Loading…" : "Load more replies"}</button>}
+        {replies.length > 0 && (
           <div className="mt-3 space-y-3 pl-4 border-l border-dream-border/30">
-            {comment.replies.map((reply) => (
+            {replies.map((reply) => (
               <Comment
                 key={reply.id}
                 comment={reply}
@@ -110,29 +130,33 @@ function Comment({
 export default function CommentThread({ dreamId }: { dreamId: string }) {
   const [comments, setComments] = useState<CommentType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [error, setError] = useState("");
 
   const fetchComments = useCallback(async () => {
-    const res = await fetch(`/api/comments?dreamId=${dreamId}`);
+    const res = await fetch(`/api/comments?dreamId=${encodeURIComponent(dreamId)}&page=${page}`);
     if (res.ok) {
       setComments(await res.json());
-    }
+      setError("");
+    } else { setError("Comments are temporarily unavailable. Please try again shortly."); }
     setLoading(false);
-  }, [dreamId]);
+  }, [dreamId, page]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const res = await fetch(`/api/comments?dreamId=${dreamId}`);
+      const res = await fetch(`/api/comments?dreamId=${encodeURIComponent(dreamId)}&page=${page}`);
       if (cancelled) return;
       if (res.ok) {
         setComments(await res.json());
-      }
+        setError("");
+      } else { setError("Comments are temporarily unavailable. Please try again shortly."); }
       setLoading(false);
     })();
     return () => {
       cancelled = true;
     };
-  }, [dreamId]);
+  }, [dreamId, page]);
 
   if (loading) {
     return <p className="text-sm text-dream-text-muted">Loading comments...</p>;
@@ -141,6 +165,11 @@ export default function CommentThread({ dreamId }: { dreamId: string }) {
   return (
     <div className="space-y-6">
       <CommentForm dreamId={dreamId} onCommentAdded={fetchComments} />
+      {error && <p role="alert">{error}</p>}
+      <div className="flex gap-4 text-sm text-dream-accent">
+        {page > 1 && <button onClick={() => setPage(page - 1)}>Previous comments</button>}
+        {comments.length === 50 && page < 1000 && <button onClick={() => setPage(page + 1)}>Next comments</button>}
+      </div>
       {comments.length === 0 ? (
         <p className="text-sm text-dream-text-muted/60">
           No comments yet. Be the first to respond to this dream.

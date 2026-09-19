@@ -3,8 +3,7 @@
 // A sigil is a symbolic glyph "grown from" a dream: the same dream id always
 // yields the same figure. Nothing is stored — the geometry is a pure function
 // of a seed string (the dream id) plus its mood and tags. This is the free,
-// always-available symbolic layer; richer AI tarot art can later be layered on
-// top via Dream.imageUrl.
+// always-available symbolic layer, with no image-generation service.
 
 import { MOODS } from "@/lib/constants";
 

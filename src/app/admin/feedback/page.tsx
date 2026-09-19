@@ -28,7 +28,7 @@ export default async function AdminFeedbackPage({
   const params = await searchParams;
 
   // Auth via query param — simple admin protection
-  if (params.secret !== process.env.ADMIN_SECRET) {
+  if (!process.env.ADMIN_SECRET || params.secret !== process.env.ADMIN_SECRET) {
     redirect("/");
   }
 
@@ -147,6 +147,14 @@ export default async function AdminFeedbackPage({
         </h1>
         <p className="text-dream-text-muted text-sm mb-8">
           Platform metrics, moderation, feedback, and donations
+        </p>
+        <p className="mb-6">
+          <a
+            href="/admin/moderation"
+            className="text-sm text-dream-accent hover:underline"
+          >
+            Open the secure moderation queue (secret held in memory) →
+          </a>
         </p>
 
         {/* Tabs */}

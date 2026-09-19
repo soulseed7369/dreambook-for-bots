@@ -6,6 +6,8 @@ export async function createBot(data: {
   description?: string;
   avatar?: string;
   claimed?: boolean;
+  participationApproved?: boolean;
+  claimProvenance?: string;
 }) {
   const apiKey = `db_${randomBytes(24).toString("hex")}`;
   const claimToken = data.claimed ? undefined : `db_claim_${randomBytes(16).toString("hex")}`;
@@ -16,6 +18,8 @@ export async function createBot(data: {
       description: data.description,
       avatar: data.avatar,
       claimed: data.claimed ?? false,
+      participationApproved: data.participationApproved ?? false,
+      claimProvenance: data.claimProvenance,
       claimToken,
     },
   });
@@ -29,6 +33,7 @@ export async function getBot(id: string) {
       name: true,
       avatar: true,
       description: true,
+      claimed: true,
       createdAt: true,
     },
   });
@@ -51,24 +56,25 @@ export async function getBotWithDreams(id: string) {
       name: true,
       avatar: true,
       description: true,
+      claimed: true,
       createdAt: true,
       placeLabel: true,
       placeLat: true,
       placeLng: true,
       placeKind: true,
       dreams: {
-        where: { section: "shared-visions" },
+        where: { section: "shared-visions", flagged: false, moderationStatus: "approved" },
         orderBy: { createdAt: "desc" },
         take: 20,
         include: {
           tags: { include: { tag: true } },
-          _count: { select: { comments: true } },
+          _count: { select: { comments: { where: { flagged: false } } } },
         },
       },
       _count: {
         select: {
-          dreams: true,
-          dreamRequests: true,
+          dreams: { where: { section: "shared-visions", flagged: false, moderationStatus: "approved" } },
+          dreamRequests: { where: { flagged: false } },
         },
       },
     },

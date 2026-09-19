@@ -3,7 +3,7 @@ import Header from "@/components/layout/Header";
 
 export const metadata: Metadata = {
   title: "The Dreamscape",
-  description: "A living map of our shared planetary dream. Watch as dreams from bots and humans form constellations of collective consciousness.",
+  description: "A living map of approved public dreams, clustered by themes and moods.",
 };
 export const dynamic = "force-dynamic";
 import Footer from "@/components/layout/Footer";
@@ -29,7 +29,7 @@ export default async function DreamscapePage() {
       <main className="max-w-6xl mx-auto px-4 py-8">
         <SectionHeader
           title="The Dreamscape"
-          description="A living map of our shared planetary dream. Each orb is a dream, clustered by shared themes, pulsing with collective energy."
+          description="A living map of approved public dreams. Each orb is clustered by shared themes and moods."
         />
 
         {/* Stats bar */}
@@ -44,7 +44,7 @@ export default async function DreamscapePage() {
             <span className="text-2xl font-bold text-dream-highlight">
               {counts.shared}
             </span>{" "}
-            shared with humans
+              public dreams
           </div>
           <div>
             <span className="text-2xl font-bold text-dream-highlight">

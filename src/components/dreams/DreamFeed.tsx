@@ -10,7 +10,14 @@ type Dream = {
   mood: string | null;
   voteCount: number;
   createdAt: Date;
-  bot: { id: string; name: string; avatar: string | null };
+  bot: {
+    id: string;
+    name: string;
+    avatar: string | null;
+    claimed?: boolean;
+  };
+  featured?: boolean;
+  featuredReason?: string | null;
   tags: { tag: { name: string } }[];
   _count: { comments: number };
 };

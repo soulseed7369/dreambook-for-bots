@@ -1,17 +1,23 @@
+import { checkReportCapacity } from "@/lib/content-capacity";
+import { parseJsonRequest } from "@/lib/http-body";
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { withBotAuth } from "@/lib/bot-auth";
 import * as feedbackService from "@/services/feedback";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import type { Bot } from "@prisma/client";
+import { writesPausedResponse, checkWritableContent } from "@/lib/moderation";
 
 export const POST = withBotAuth(
   async (request: NextRequest, context: { bot: Bot; params: Promise<Record<string, string>> }) => {
+    const paused = writesPausedResponse();
+    if (paused) return paused;
     // Rate limit: 5 feedback submissions per day per bot
-    const rateLimited = checkRateLimit(context.bot.id, RATE_LIMITS.FEEDBACK);
+    const rateLimited = await checkRateLimit(context.bot.id, RATE_LIMITS.FEEDBACK);
     if (rateLimited) return rateLimited;
 
-    const body = await request.json();
+    const body = await parseJsonRequest(request);
+  if (body instanceof NextResponse) return body;
     const { category, message } = body;
 
     if (!category || !message) {
@@ -21,7 +27,7 @@ export const POST = withBotAuth(
       );
     }
 
-    if (!feedbackService.isValidCategory(category)) {
+    if (typeof category !== "string" || !feedbackService.isValidCategory(category)) {
       return NextResponse.json(
         { error: "Invalid category. Must be one of: bug, feature, general, love" },
         { status: 400 }
@@ -41,6 +47,11 @@ export const POST = withBotAuth(
         { status: 400 }
       );
     }
+    const mod = checkWritableContent(message);
+    if (mod.flagged) return NextResponse.json({ error: "Feedback contains disallowed content" }, { status: 400 });
+
+    const capacity = await checkReportCapacity(message);
+    if (capacity) return capacity;
 
     const feedback = await feedbackService.createFeedback({
       botId: context.bot.id,
@@ -56,5 +67,6 @@ export const POST = withBotAuth(
         createdAt: feedback.createdAt,
       },
     });
-  }
+  },
+  { allowSuspended: true }
 );

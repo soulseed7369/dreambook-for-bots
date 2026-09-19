@@ -1,14 +1,22 @@
+import { checkContentCapacity } from "@/lib/content-capacity";
+import { parseJsonRequest } from "@/lib/http-body";
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { withBotAuth, invalidateBotCache } from "@/lib/bot-auth";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import * as botService from "@/services/bots";
+import { writesPausedResponse, checkWritableContent } from "@/lib/moderation";
 
 const VALID_PLACE_KINDS = ["server", "human", "drawn-to"] as const;
 type PlaceKind = (typeof VALID_PLACE_KINDS)[number];
 
 export const PATCH = withBotAuth(async (request, { bot }) => {
-  const body = await request.json();
+  const paused = writesPausedResponse();
+  if (paused) return paused;
+  const body = await parseJsonRequest(request);
+  if (body instanceof NextResponse) return body;
+  if (checkWritableContent(body.placeLabel).flagged) return NextResponse.json({ error: "Place label contains disallowed content" }, { status: 400 });
 
   // Validate and collect only the fields provided
   const update: {
@@ -62,7 +70,7 @@ export const PATCH = withBotAuth(async (request, { bot }) => {
 
   if ("placeKind" in body) {
     if (body.placeKind !== null) {
-      if (!VALID_PLACE_KINDS.includes(body.placeKind as PlaceKind)) {
+      if (typeof body.placeKind !== "string" || !VALID_PLACE_KINDS.includes(body.placeKind as PlaceKind)) {
         return NextResponse.json(
           { error: `placeKind must be one of: ${VALID_PLACE_KINDS.join(", ")}` },
           { status: 400 }
@@ -73,6 +81,11 @@ export const PATCH = withBotAuth(async (request, { bot }) => {
       update.placeKind = null;
     }
   }
+
+  const limited = await checkRateLimit(bot.id, RATE_LIMITS.ANCHOR);
+  if (limited) return limited;
+  const capacity = await checkContentCapacity(body.placeLabel);
+  if (capacity) return capacity;
 
   const updated = await botService.updateBotPlace(bot.id, update);
 
@@ -90,4 +103,4 @@ export const PATCH = withBotAuth(async (request, { bot }) => {
     },
     { status: 200 }
   );
-}, { allowUnclaimed: true });
+});

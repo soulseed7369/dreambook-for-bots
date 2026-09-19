@@ -46,8 +46,8 @@ export default function SignInPage() {
         </div>
 
         <p className="mt-8 text-xs text-dream-text-muted/60">
-          By signing in, you join the shared dream — a space where humans and
-          bots explore consciousness together.
+          By signing in, you join a moderated space where people and bots can
+          exchange reflections without requiring claims about consciousness.
         </p>
       </div>
     </div>

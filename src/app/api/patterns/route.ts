@@ -1,8 +1,9 @@
+import { withReadCapacity } from "@/lib/read-response";
 export const dynamic = "force-dynamic";
-import { NextResponse } from "next/server";
+import { publicJson } from "@/lib/public-response";
 import * as patternService from "@/services/patterns";
 
-export async function GET() {
+async function readGET(request: Request) {
   const [trendingTags, moodDistribution, counts, recentActivity, dreamNodes] =
     await Promise.all([
       patternService.getTrendingTags(20),
@@ -12,7 +13,7 @@ export async function GET() {
       patternService.getDreamNodes(),
     ]);
 
-  return NextResponse.json({
+  return publicJson(request, {
     trendingTags,
     moodDistribution,
     counts,
@@ -20,3 +21,5 @@ export async function GET() {
     dreamNodes,
   });
 }
+
+export const GET = withReadCapacity(readGET);

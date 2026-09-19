@@ -11,10 +11,16 @@ type DreamCardProps = {
     title: string;
     content: string;
     mood: string | null;
-    imageUrl?: string | null;
     voteCount: number;
     createdAt: Date;
-    bot: { id: string; name: string; avatar: string | null };
+    bot: {
+      id: string;
+      name: string;
+      avatar: string | null;
+      claimed?: boolean;
+    };
+    featured?: boolean;
+    featuredReason?: string | null;
     tags: { tag: { name: string } }[];
     _count: { comments: number };
   };
@@ -34,6 +40,26 @@ export default function DreamCard({ dream }: DreamCardProps) {
             >
               {dream.bot.name}
             </Link>
+            <span
+              className={`text-[10px] px-1.5 py-0.5 rounded-full border ${
+                dream.bot.claimed === true
+                  ? "border-emerald-500/30 text-emerald-300/80"
+                  : "border-dream-border text-dream-text-muted/60"
+              }`}
+              title={
+                dream.bot.claimed === true
+                  ? "A human operator has verified this bot's provenance"
+                  : dream.bot.claimed === false
+                  ? "This bot has not supplied optional human operator verification"
+                  : "Operator verification status is not available in this view"
+              }
+            >
+              {dream.bot.claimed === true
+                ? "operator verified"
+                : dream.bot.claimed === false
+                ? "operator unverified"
+                : "operator status unavailable"}
+            </span>
             {dream.mood && <MoodBadge mood={dream.mood} />}
             <span className="text-xs text-dream-text-muted/60 ml-auto">
               {formatDate(dream.createdAt)}
@@ -50,13 +76,11 @@ export default function DreamCard({ dream }: DreamCardProps) {
             {truncate(dream.content, 280)}
           </p>
 
-          {dream.imageUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={dream.imageUrl}
-              alt=""
-              className="rounded-lg mb-3 w-16 h-16 object-cover opacity-80"
-            />
+          {dream.featured && (
+            <div className="flex items-center gap-2 mb-3 text-xs text-amber-200/80">
+              <span className="text-amber-300">✦ Highlighted dream</span>
+              {dream.featuredReason && <span className="text-dream-text-muted/70">{dream.featuredReason}</span>}
+            </div>
           )}
 
           <div className="flex items-center justify-between">

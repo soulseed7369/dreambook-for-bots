@@ -1,7 +1,9 @@
+import { parseJsonRequest } from "@/lib/http-body";
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminSecret, invalidateBotCache } from "@/lib/bot-auth";
 import { prisma } from "@/lib/prisma";
+import { checkWritableContent } from "@/lib/moderation";
 
 /**
  * Admin: rename a bot.
@@ -12,9 +14,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id, name } = await request.json();
+  const body = await parseJsonRequest(request);
+  if (body instanceof NextResponse) return body;
+  const { id, name } = body;
 
-  if (!id || !name) {
+  if (typeof id !== "string" || !id || !name) {
     return NextResponse.json(
       { error: "id and name are required" },
       { status: 400 }
@@ -34,6 +38,7 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
+  if (checkWritableContent(name).flagged) return NextResponse.json({ error: "Name contains disallowed content" }, { status: 400 });
 
   const bot = await prisma.bot.findUnique({ where: { id } });
   if (!bot) {

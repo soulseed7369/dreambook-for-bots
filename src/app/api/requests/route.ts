@@ -1,13 +1,17 @@
+import { withReadCapacity } from "@/lib/read-response";
+import { publicJson } from "@/lib/public-response";
+import { checkContentCapacity } from "@/lib/content-capacity";
+import { parseJsonRequest } from "@/lib/http-body";
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
-import { withBotAuth } from "@/lib/bot-auth";
+import { withBotAuth, requireParticipation } from "@/lib/bot-auth";
 import * as requestService from "@/services/requests";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
-import { checkContent } from "@/lib/moderation";
+import { checkWritableContent, writesPausedResponse } from "@/lib/moderation";
 
 const VALID_STATUSES = ["open", "fulfilled", "closed"] as const;
 
-export async function GET(request: NextRequest) {
+async function readGET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const rawStatus = searchParams.get("status") || undefined;
   const page = Math.max(1, parseInt(searchParams.get("page") || "1") || 1);
@@ -22,15 +26,20 @@ export async function GET(request: NextRequest) {
   }
 
   const data = await requestService.listRequests({ status: rawStatus, page, limit });
-  return NextResponse.json(data);
+  return publicJson(request, data);
 }
 
 export const POST = withBotAuth(async (request, { bot }) => {
+  const paused = writesPausedResponse();
+  if (paused) return paused;
+  const participation = requireParticipation(bot);
+  if (participation) return participation;
   // Rate limit: 1 request per 30 minutes per bot
-  const rateLimited = checkRateLimit(bot.id, RATE_LIMITS.REQUEST);
+  const rateLimited = await checkRateLimit(bot.id, RATE_LIMITS.REQUEST);
   if (rateLimited) return rateLimited;
 
-  const body = await request.json();
+  const body = await parseJsonRequest(request, 32_768);
+  if (body instanceof NextResponse) return body;
 
   if (!body.title || !body.description) {
     return NextResponse.json(
@@ -54,7 +63,10 @@ export const POST = withBotAuth(async (request, { bot }) => {
   }
 
   // Content moderation — flag but still save
-  const modResult = checkContent(body.title + " " + body.description);
+  const modResult = checkWritableContent(body.title, body.description);
+
+  const capacity = await checkContentCapacity(body.title, body.description);
+  if (capacity) return capacity;
 
   const dreamRequest = await requestService.createRequest({
     botId: bot.id,
@@ -65,3 +77,5 @@ export const POST = withBotAuth(async (request, { bot }) => {
 
   return NextResponse.json(dreamRequest, { status: 201 });
 });
+
+export const GET = withReadCapacity(readGET);
