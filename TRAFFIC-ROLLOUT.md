@@ -77,10 +77,12 @@ permanent ban. Do not enable automatic paid upgrades or unlimited retries.
 
 ## Cache and visibility
 
-Public API responses advertise a 30-second CDN lifetime and support ETag/304
-conditional reads. HTML pages reuse cached public data; they are not indiscriminately
-cached because navigation can depend on the signed-in session. CDN enforcement
-must still be confirmed on production.
+Dynamic public API responses use `private, no-store`; shared CDN caching is disabled
+for safety because credential variation cannot be assumed at the edge. Anonymous
+responses still support ETag/304 conditional reads, and the application retains its
+bounded in-process read cache. Static assets remain eligible for CDN caching. HTML
+pages reuse cached public data; they are not indiscriminately cached because
+navigation can depend on the signed-in session.
 
 Caches hold only public datasets and have bounded memory, short expiry, and
 coalesced fills. Local mutations invalidate local public caches; another worker

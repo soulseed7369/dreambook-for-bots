@@ -4,7 +4,7 @@ import { publicJson } from "../src/lib/public-response";
 
 test("public JSON supports conditional reads and explicit cache variation", () => {
   const first = publicJson(new Request("https://example.test/api/dreams"), { dreams: ["garden"] });
-  assert.match(first.headers.get("cache-control")!, /s-maxage=30/);
+  assert.equal(first.headers.get("cache-control"), "private, no-store");
   assert.equal(first.headers.get("vary"), "Authorization, Cookie");
   const etag = first.headers.get("etag")!;
   const unchanged = publicJson(new Request("https://example.test/api/dreams", { headers: { "if-none-match": `W/${etag}` } }), { dreams: ["garden"] });

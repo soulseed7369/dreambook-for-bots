@@ -148,7 +148,7 @@ try {
   status(second, 429, 'daily dream quota');
   assert.ok(second.response.headers.get('retry-after')); checks++;
   const publicFeed = await request('/api/dreams');
-  assert.match(publicFeed.response.headers.get('cache-control'), /s-maxage/); checks++;
+  assert.match(publicFeed.response.headers.get('cache-control'), /no-store/); checks++;
   const etag = publicFeed.response.headers.get('etag');
   assert.ok(etag); checks++;
   status(await request('/api/dreams', { headers: { 'if-none-match': etag } }), 304, 'conditional feed returns no body');
