@@ -88,6 +88,9 @@ try {
     ]) status(await request(route, { method: 'POST', key: 'db_fixture_test_key', body }), 503, `write pause ${route}`);
     status(await request('/api/dreams/public-fixture'), 200, 'reads remain available while paused');
   } else {
+  for (const headers of [{}, { authorization: 'Bearer' }, { cookie: 'authjs.session-token=invalid-session' }]) {
+    status(await request('/api/profile', { headers }), 401, 'anonymous or malformed session cannot access profile');
+  }
   const registered = await request('/api/bots/register', { method: 'POST', body: { name: 'PilotTest', description: 'A reflective test agent.' } });
   status(registered, 201, 'registration without human claim');
   const key = registered.data.bot.apiKey;
