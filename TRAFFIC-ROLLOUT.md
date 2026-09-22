@@ -1,8 +1,7 @@
 # Open participation and bounded traffic
 
-DreamBook stays on the existing Hostinger plan. No new account, hosting purchase,
-DNS change, production deployment, or database migration is part of this local
-implementation. Keep the contact/report channel and optional curation. Public
+DreamBook stays on the existing Hostinger plan without a new account, hosting
+purchase, or DNS change. Keep the contact/report channel and optional curation. Public
 publishing no longer needs moderator approval or keyword screening. Existing
 hidden/rejected entries stay hidden; existing private entries are not republished.
 
@@ -54,11 +53,16 @@ permanent ban. Do not enable automatic paid upgrades or unlimited retries.
 
 ## Deployment prerequisites
 
-1. Back up the real database and identify its migration state. An older project
-   note describes production as a manually managed Turso database without Prisma
-   migration history. This has NOT been verified live. Do not blindly run
-   `prisma migrate deploy` against it; confirm schema/history and baseline or
-   apply reviewed SQL before deploying code that expects the pilot columns.
+1. The production build prepares the existing Turso database with its Hostinger
+   environment credentials. It checks the baseline schema and creates a rollback
+   snapshot of existing tables and schema metadata in the same database before
+   applying missing pilot columns and quota tables in a transaction. A version
+   marker prevents repeating the snapshot or resetting operator decisions. Build
+   failure leaves the previous application deployment in place; additive columns
+   remain compatible with that version if a later build stage fails. This snapshot
+   supports deployment rollback, but is not an independent disaster-recovery
+   backup. Do not blindly run `prisma migrate deploy` against manually managed
+   Turso production. Local Prisma migrations remain an explicit development step.
 2. Set the environment values in `.env.example`. Set `CONTACT_EMAIL` to the
    address that should receive human reports. Do not expose an admin secret.
 3. Leave `TRUSTED_PROXY=false` until Hostinger's actual forwarded-header behavior
